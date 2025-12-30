@@ -165,3 +165,50 @@ body.auth-page {
         --text-muted: rgba(255, 228, 236, 0.85);
     }
 }
+
+/* ----------------------------
+   6) Icon System Styles
+---------------------------- */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.icon svg {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* Icon sizes */
+.icon-xs svg { width: 12px; height: 12px; }
+.icon-sm svg { width: 16px; height: 16px; }
+.icon-md svg { width: 20px; height: 20px; }
+.icon-lg svg { width: 24px; height: 24px; }
+.icon-xl svg { width: 32px; height: 32px; }
+
+/* Icon in buttons */
+button .icon {
+  margin-right: 6px;
+}
+
+button .icon:last-child {
+  margin-right: 0;
+  margin-left: 6px;
+}
+
+button .icon:only-child {
+  margin: 0;
+}
+
+/* Icon colors */
+.icon-primary svg { color: var(--ruby-primary); }
+.icon-secondary svg { color: var(--ruby-secondary); }
+.icon-success svg { color: var(--status-online); }
+.icon-danger svg { color: var(--status-dnd); }
+.icon-warning svg { color: var(--status-idle); }
+.icon-muted svg { color: var(--text-muted); }

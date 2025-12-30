@@ -1,8 +1,12 @@
-document.addEventListener('DOMContentLoaded', () => {
+// Floating Profile Controller
+(function initFloatingProfile() {
   const fp = document.getElementById('floatingProfile');
   const trigger = document.getElementById('userPanelTrigger');
 
-  if (!fp || !trigger) return;
+  if (!fp || !trigger) {
+    console.warn('Floating profile elements not found');
+    return;
+  }
 
   const avatarEl = document.getElementById('fpAvatar');
   const usernameEl = document.getElementById('fpUsername');
@@ -86,4 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (trigger.contains(e.target)) return;
     close();
   });
-});
+
+  console.log('Floating profile initialized');
+})();
