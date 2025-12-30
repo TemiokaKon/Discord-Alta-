@@ -6,6 +6,8 @@ const config = require('../config/environment');
  * Configure Helmet for security headers
  */
 function configureHelmet() {
+  const config = require('../config/environment');
+  
   return helmet({
     contentSecurityPolicy: {
       directives: {
@@ -16,23 +18,20 @@ function configureHelmet() {
           "https://cdnjs.cloudflare.com",
           "https://fonts.googleapis.com"
         ],
-        scriptSrc: [
-          "'self'", 
-          "'unsafe-inline'",
-          "'unsafe-eval'",
-          "https://cdnjs.cloudflare.com"
-        ],
+        scriptSrc: config.isProduction 
+          ? ["'self'", "https://cdnjs.cloudflare.com"]
+          : ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com"],
         fontSrc: [
           "'self'",
           "data:",
           "https://cdnjs.cloudflare.com",
           "https://fonts.gstatic.com",
-          "https://fonts.googleapis.com" // <--- 1. ИСПРАВЛЕНИЕ ДЛЯ ШРИФТОВ
+          "https://fonts.googleapis.com"
         ],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         connectSrc: [
           "'self'", 
-          "wss:",  // Разрешаем любые WebSocket подключения
+          "wss:",
           "ws:",
           "https:",
           "http:"
@@ -42,7 +41,7 @@ function configureHelmet() {
         baseUri: ["'self'"],
         formAction: ["'self'"],
         frameAncestors: ["'none'"],
-        upgradeInsecureRequests: []
+        upgradeInsecureRequests: config.isProduction ? [] : null
       }
     },
     crossOriginEmbedderPolicy: false,
@@ -105,13 +104,38 @@ const uploadLimiter = rateLimit({
  * CORS configuration
  */
 function configureCors() {
-  // <--- 2. ИСПРАВЛЕНИЕ CORS: Разрешаем всё для удобства разработки
-  return {
-    origin: true, // Разрешает любой источник
-    credentials: true, // Разрешает куки и заголовки авторизации
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-  };
+  const config = require('../config/environment');
+  
+  if (config.isProduction) {
+    // Production: use whitelist from environment variable
+    const allowedOrigins = process.env.CORS_ORIGINS 
+      ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+      : [config.baseUrl, `https://${config.server.domain}`];
+    
+    return {
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+    };
+  } else {
+    // Development: permissive CORS
+    return {
+      origin: true,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+    };
+  }
 }
 
 /**

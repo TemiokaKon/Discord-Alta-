@@ -21,9 +21,28 @@ document.addEventListener('DOMContentLoaded', () => {
   function hydrate() {
     const user = loadUser();
     const username = user?.username || 'Пользователь';
-    const avatar = user?.avatar || username?.[0]?.toUpperCase() || 'U';
+    const avatar = user?.avatar;
 
-    if (avatarEl) avatarEl.textContent = avatar;
+    // Handle avatar rendering
+    if (avatarEl) {
+      if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) {
+        // Render as image
+        avatarEl.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = avatar;
+        img.alt = username;
+        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 50%;';
+        img.onerror = () => {
+          // Fallback to letter if image fails to load
+          avatarEl.innerHTML = username?.[0]?.toUpperCase() || 'U';
+        };
+        avatarEl.appendChild(img);
+      } else {
+        // Render as letter
+        avatarEl.textContent = avatar || username?.[0]?.toUpperCase() || 'U';
+      }
+    }
+    
     if (usernameEl) usernameEl.textContent = username;
     if (statusEl) statusEl.textContent = 'Онлайн';
   }

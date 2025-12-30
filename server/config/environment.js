@@ -17,14 +17,14 @@ const config = {
 
   // Security
   security: {
-    jwtSecret: process.env.JWT_SECRET || '6vHKASDi95nHGqjewGHKSASDlj:0oGHGuA7GHKSASDHGGHKSASDGHKSASD1zpjGko8:X:',
-    sessionSecret: process.env.SESSION_SECRET || '6vHKASDi95nHGqjewGHKSASDlj:0oGHGuA7GHKSASDHGGHKSASDGHKSASD1zpjGko8:X:X',
+    jwtSecret: process.env.JWT_SECRET,
+    sessionSecret: process.env.SESSION_SECRET,
     bcryptRounds: 10
   },
 
   // Database
   database: {
-    path: process.env.DB_PATH || './data/alta52.db'
+    path: process.env.DB_PATH || './data/alta-base.db'
   },
 
   // Upload Configuration
@@ -73,11 +73,33 @@ function validateConfig() {
   const errors = [];
 
   if (config.isProduction) {
-    if (config.security.jwtSecret === 'your-secret-key-change-in-production') {
+    // JWT Secret validation
+    if (!config.security.jwtSecret) {
       errors.push('JWT_SECRET must be set in production');
-    }
-    if (config.security.jwtSecret.length < 32) {
+    } else if (config.security.jwtSecret.length < 32) {
       errors.push('JWT_SECRET should be at least 32 characters');
+    }
+
+    // Session Secret validation
+    if (!config.security.sessionSecret) {
+      errors.push('SESSION_SECRET must be set in production');
+    } else if (config.security.sessionSecret.length < 32) {
+      errors.push('SESSION_SECRET should be at least 32 characters');
+    }
+
+    // Database path validation
+    if (!process.env.DB_PATH) {
+      errors.push('DB_PATH must be set in production (recommended: /var/lib/alta52/alta52.db)');
+    }
+  } else {
+    // In development, provide defaults if not set
+    if (!config.security.jwtSecret) {
+      config.security.jwtSecret = 'dev-jwt-secret-change-in-production-min-32-chars';
+      console.warn('⚠️  Using default JWT_SECRET for development. Set JWT_SECRET in production!');
+    }
+    if (!config.security.sessionSecret) {
+      config.security.sessionSecret = 'dev-session-secret-change-in-production-min-32-chars';
+      console.warn('⚠️  Using default SESSION_SECRET for development. Set SESSION_SECRET in production!');
     }
   }
 

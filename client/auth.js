@@ -278,7 +278,7 @@ function removePasswordStrengthIndicator() {
 async function login(email, password, rememberMe) {
     showLoading(true);
     try {
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch('/api/v1/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -303,7 +303,7 @@ async function login(email, password, rememberMe) {
 async function register(username, email, password) {
     showLoading(true);
     try {
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch('/api/v1/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password })

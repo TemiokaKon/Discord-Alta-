@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcrypt');
 const userModel = require('../models/user.model');
+const config = require('../config/environment');
 const { authenticateToken } = require('../middleware/auth.middleware');
 const { validate, schemas } = require('../middleware/validation.middleware');
 const { asyncHandler } = require('../middleware/error.middleware');
@@ -139,6 +141,55 @@ router.put('/me/status', asyncHandler(async (req, res) => {
   res.json({
     success: true,
     data: { status },
+    timestamp: new Date().toISOString()
+  });
+}));
+
+/**
+ * @route   PUT /api/v1/users/me/password
+ * @desc    Change user password
+ * @access  Private
+ */
+router.put('/me/password', validate(schemas.changePassword), asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  
+  // Get user with password
+  const user = await userModel.findByIdWithPassword(req.user.id);
+  
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: {
+        code: 'USER_NOT_FOUND',
+        message: 'User not found',
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+  
+  // Verify old password
+  const isValidPassword = await bcrypt.compare(oldPassword, user.password);
+  
+  if (!isValidPassword) {
+    return res.status(401).json({
+      success: false,
+      error: {
+        code: 'INVALID_PASSWORD',
+        message: 'Current password is incorrect',
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+  
+  // Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, config.security.bcryptRounds);
+  
+  // Update password
+  await userModel.updatePassword(req.user.id, hashedPassword);
+  
+  res.json({
+    success: true,
+    data: { message: 'Password changed successfully' },
     timestamp: new Date().toISOString()
   });
 }));

@@ -32,6 +32,16 @@ class UserModel {
   }
 
   /**
+   * Find user by ID with password (for authentication)
+   */
+  async findByIdWithPassword(id) {
+    return await this.db.get(
+      'SELECT * FROM users WHERE id = ?',
+      [id]
+    );
+  }
+
+  /**
    * Find user by email
    */
   async findByEmail(email) {

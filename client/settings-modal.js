@@ -749,7 +749,7 @@ class SettingsModal {
         const reader = new FileReader();
         reader.onload = (e) => {
             const avatarPreview = document.getElementById('avatarPreview');
-            if (avatarPreview) avatarPreview.innerHTML = `<img src="${updatedUser.avatar}" alt="Avatar">`;
+            if (avatarPreview) avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Avatar">`;
         };
         reader.readAsDataURL(file);
 

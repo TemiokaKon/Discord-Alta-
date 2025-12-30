@@ -299,7 +299,7 @@ function switchFriendsTab(tabName) {
 
 async function loadFriends() {
     try {
-        const response = await fetch('/api/friends', {
+        const response = await fetch('/api/v1/friends', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -383,11 +383,12 @@ async function searchUsers() {
     if (!query) return;
     
     try {
-        const response = await fetch('/api/users', {
+        const response = await fetch('/api/v1/users', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const users = await response.json();
+        const payload = await response.json();
         
+        const users = payload?.data || [];
         const results = users.filter(u => 
             u.username.toLowerCase().includes(query.toLowerCase()) && 
             u.id !== currentUser.id
@@ -426,20 +427,20 @@ function displaySearchResults(users) {
 
 window.sendFriendRequest = async function(friendId) {
     try {
-        const response = await fetch('/api/friends/request', {
+        const response = await fetch(`/api/v1/friends/${friendId}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ friendId })
+            }
         });
         
-        if (response.ok) {
+        const payload = await response.json();
+        
+        if (response.ok && payload?.success) {
             alert('Запрос дружбы отправлен!');
         } else {
-            const error = await response.json();
-            alert(error.error || 'Не удалось отправить запрос');
+            alert(payload?.error?.message || 'Не удалось отправить запрос');
         }
     } catch (error) {
         console.error('Error sending friend request:', error);
@@ -449,10 +450,12 @@ window.sendFriendRequest = async function(friendId) {
 
 async function loadPendingRequests() {
     try {
-        const response = await fetch('/api/friends/pending', {
+        const response = await fetch('/api/v1/friends/pending', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const requests = await response.json();
+        const payload = await response.json();
+        
+        const requests = payload?.data?.pending || [];
         
         const pendingList = document.getElementById('friendsPending');
         pendingList.innerHTML = '';
@@ -487,13 +490,12 @@ async function loadPendingRequests() {
 
 window.acceptFriendRequest = async function(friendId) {
     try {
-        const response = await fetch('/api/friends/accept', {
-            method: 'POST',
+        const response = await fetch(`/api/v1/friends/${friendId}/accept`, {
+            method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ friendId })
+            }
         });
         
         if (response.ok) {
@@ -507,13 +509,12 @@ window.acceptFriendRequest = async function(friendId) {
 
 window.rejectFriendRequest = async function(friendId) {
     try {
-        const response = await fetch('/api/friends/reject', {
-            method: 'POST',
+        const response = await fetch(`/api/v1/friends/${friendId}`, {
+            method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ friendId })
+            }
         });
         
         if (response.ok) {
@@ -528,7 +529,7 @@ window.removeFriend = async function(friendId) {
     if (!confirm('Вы уверены, что хотите удалить этого друга?')) return;
     
     try {
-        const response = await fetch(`/api/friends/${friendId}`, {
+        const response = await fetch(`/api/v1/friends/${friendId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -772,7 +773,7 @@ function showServerView(server) {
 
 async function loadUserServers() {
     try {
-        const response = await fetch('/api/servers', {
+        const response = await fetch('/api/v1/servers', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -813,7 +814,7 @@ async function createNewServer() {
         // Define callback for when server is created
         window.onServerCreated = async (serverData) => {
             try {
-                const response = await fetch('/api/servers', {
+                const response = await fetch('/api/v1/servers', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -854,7 +855,7 @@ async function createNewServer() {
         if (!serverName || serverName.trim() === '') return;
         
         try {
-            const response = await fetch('/api/servers', {
+            const response = await fetch('/api/v1/servers', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -864,9 +865,12 @@ async function createNewServer() {
             });
             
             if (response.ok) {
-                const server = await response.json();
-                servers.push(server);
-                addServerToUI(server, true);
+                const payload = await response.json();
+                const server = payload?.data?.server;
+                if (server) {
+                    servers.push(server);
+                    addServerToUI(server, true);
+                }
             }
         } catch (error) {
             console.error('Error creating server:', error);
@@ -945,11 +949,12 @@ async function loadChannelMessages(channelName) {
     const channelId = channelName === 'general' ? 1 : 2;
 
     try {
-        const response = await fetch(`/api/messages/${channelId}`, {
+        const response = await fetch(`/api/v1/messages/channel/${channelId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
-            const messages = await response.json();
+            const payload = await response.json();
+            const messages = payload?.data || [];
             messages.forEach(message => {
                 addMessageToUI({
                     id: message.id,
@@ -1177,9 +1182,8 @@ async function uploadFile(file) {
     try {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('channelId', currentChannel);
         
-        const response = await fetch('/api/upload', {
+        const response = await fetch('/api/v1/upload', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -1613,16 +1617,17 @@ async function loadDMHistory(userId) {
    messagesContainer.innerHTML = '';
 
    try {
-       const response = await fetch(`/api/dm/${userId}`, {
+       const response = await fetch(`/api/v1/messages/dm/${userId}`, {
            headers: { 'Authorization': `Bearer ${token}` }
        });
        if (response.ok) {
-           const messages = await response.json();
+           const payload = await response.json();
+           const messages = payload?.data || [];
            messages.forEach(message => {
                addMessageToUI({
                    id: message.id,
-                   author: message.username,
-                   avatar: message.avatar || message.username.charAt(0).toUpperCase(),
+                   author: message.sender_username || message.username,
+                   avatar: message.sender_avatar || message.avatar || message.username?.charAt(0).toUpperCase(),
                    text: message.content,
                    timestamp: message.created_at
                });

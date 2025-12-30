@@ -9,14 +9,21 @@ module.exports = {
     max_memory_restart: '1G',
     env: {
       NODE_ENV: 'development',
-      PORT: 3000
+      PORT: 3000,
+      LOG_DIR: process.env.LOG_DIR || './logs',
+      DB_PATH: process.env.DB_PATH || './data/alta-base.db'
     },
     env_production: {
       NODE_ENV: 'production',
-      PORT: 3000
+      PORT: process.env.PORT || 3000,
+      LOG_DIR: process.env.LOG_DIR || '/var/log/alta52',
+      DB_PATH: process.env.DB_PATH || '/var/lib/alta52/alta52.db',
+      JWT_SECRET: process.env.JWT_SECRET,
+      SESSION_SECRET: process.env.SESSION_SECRET,
+      CORS_ORIGINS: process.env.CORS_ORIGINS
     },
-    error_file: './logs/pm2-error.log',
-    out_file: './logs/pm2-out.log',
+    error_file: process.env.LOG_DIR ? `${process.env.LOG_DIR}/pm2-error.log` : './logs/pm2-error.log',
+    out_file: process.env.LOG_DIR ? `${process.env.LOG_DIR}/pm2-out.log` : './logs/pm2-out.log',
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     merge_logs: true,
     restart_delay: 4000,

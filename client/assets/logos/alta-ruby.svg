@@ -1,0 +1,65 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Ruby gradient for main facets -->
+    <linearGradient id="rubyGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF2D7A;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#E0115F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B80F4D;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Darker facets -->
+    <linearGradient id="rubyGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8B0A3D;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B80F4D;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Bright highlights -->
+    <linearGradient id="rubyHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFE4EC;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#FF4D8D;stop-opacity:0.3" />
+    </linearGradient>
+    
+    <!-- Glow effect -->
+    <radialGradient id="rubyGlow">
+      <stop offset="0%" style="stop-color:#FF2D7A;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#E0115F;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Outer glow -->
+  <ellipse cx="60" cy="60" rx="50" ry="50" fill="url(#rubyGlow)" opacity="0.5"/>
+  
+  <!-- Gemstone facets (creating 3D ruby effect) -->
+  <!-- Top facet -->
+  <path d="M 60 15 L 40 35 L 60 30 L 80 35 Z" fill="url(#rubyHighlight)"/>
+  
+  <!-- Upper left facet -->
+  <path d="M 40 35 L 25 50 L 35 60 L 60 30 Z" fill="url(#rubyGrad1)"/>
+  
+  <!-- Upper right facet -->
+  <path d="M 80 35 L 95 50 L 85 60 L 60 30 Z" fill="url(#rubyGrad2)"/>
+  
+  <!-- Center main facet (table) -->
+  <path d="M 60 30 L 35 60 L 60 75 L 85 60 Z" fill="url(#rubyGrad1)" opacity="0.95"/>
+  
+  <!-- Lower left facet -->
+  <path d="M 35 60 L 25 50 L 30 85 L 60 75 Z" fill="url(#rubyGrad2)"/>
+  
+  <!-- Lower right facet -->
+  <path d="M 85 60 L 95 50 L 90 85 L 60 75 Z" fill="url(#rubyGrad1)"/>
+  
+  <!-- Bottom point (culet) -->
+  <path d="M 60 75 L 30 85 L 60 105 L 90 85 Z" fill="url(#rubyGrad2)"/>
+  
+  <!-- Bright highlight on top -->
+  <path d="M 60 15 L 55 25 L 60 30 L 65 25 Z" fill="#FFE4EC" opacity="0.85"/>
+  
+  <!-- Side highlights for sparkle -->
+  <ellipse cx="45" cy="50" rx="6" ry="8" fill="#FFE4EC" opacity="0.35" transform="rotate(-20 45 50)"/>
+  <ellipse cx="75" cy="55" rx="5" ry="7" fill="#FFE4EC" opacity="0.3" transform="rotate(25 75 55)"/>
+  
+  <!-- Inner sparkle points -->
+  <circle cx="52" cy="45" r="2" fill="#FFFFFF" opacity="0.7"/>
+  <circle cx="68" cy="48" r="1.5" fill="#FFFFFF" opacity="0.6"/>
+  <circle cx="60" cy="55" r="2.5" fill="#FFFFFF" opacity="0.5"/>
+</svg>
