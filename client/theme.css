@@ -1,0 +1,167 @@
+/* =========================================================
+   Alta Ruby Discord — Unified Theme Tokens
+   Single source of truth for all design tokens
+   ========================================================= */
+
+/* ----------------------------
+   1) CSS Custom Properties (Design Tokens)
+---------------------------- */
+:root {
+    /* ===== Brand Colors (Ruby Theme) ===== */
+    --ruby-primary: #E0115F;
+    --ruby-secondary: #B80F4D;
+    --ruby-dark: #1A0B0F;
+    --ruby-darker: #14090C;
+    --ruby-light: #FFE4EC;
+    --ruby-glow: #FF2D7A;
+    --ruby-spark: #FF4D8D;
+    --ruby-glass: rgba(255, 228, 236, 0.05);
+
+    /* ===== Discord-inspired Base Colors ===== */
+    --background-primary: #36393f;
+    --background-secondary: #2f3136;
+    --background-tertiary: #202225;
+    --background-accent: #4f545c;
+
+    --text-normal: #dcddde;
+    --text-muted: #72767d;
+
+    --interactive-normal: #b9bbbe;
+    --interactive-hover: #dcddde;
+    --interactive-active: #fff;
+
+    --brand-experiment: #5865f2;
+
+    /* ===== Status Colors ===== */
+    --status-online: #43b581;
+    --status-idle: #faa61a;
+    --status-dnd: #f04747;
+    --status-offline: #747f8d;
+
+    /* ===== Surface Layers (Liquid Glass) ===== */
+    --surface-0: rgba(20, 9, 12, 0.92);      /* Base layer */
+    --surface-1: rgba(26, 11, 15, 0.95);      /* Main card */
+    --surface-2: rgba(255, 228, 236, 0.03);   /* Input bg */
+    --surface-3: rgba(255, 228, 236, 0.06);   /* Hover input bg */
+    --surface-glass: rgba(20, 9, 12, 0.42);   /* Floating glass */
+
+    /* ===== Borders ===== */
+    --border-soft: rgba(255, 228, 236, 0.10);
+    --border-strong: rgba(224, 17, 95, 0.20);
+    --border-glow: rgba(224, 17, 95, 0.35);
+
+    /* ===== Text Colors ===== */
+    --text-strong: #ffffff;
+    --text: rgba(255, 228, 236, 0.88);
+    --text-muted: rgba(255, 228, 236, 0.70);
+    --text-dim: rgba(255, 228, 236, 0.45);
+
+    /* ===== Danger/Success States ===== */
+    --danger-1: rgba(220, 38, 38, 0.92);
+    --danger-2: rgba(185, 28, 28, 0.92);
+    --success-1: rgba(34, 197, 94, 0.92);
+    --success-2: rgba(21, 128, 61, 0.92);
+
+    /* ===== Shadows ===== */
+    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
+    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.50);
+    --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.40);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.30);
+    --shadow-glow: 0 0 0 1px rgba(224, 17, 95, 0.10);
+    --shadow-glow-strong: 0 0 0 1px rgba(224, 17, 95, 0.25);
+
+    /* ===== Border Radius ===== */
+    --r-1: 8px;
+    --r-2: 12px;
+    --r-3: 16px;
+    --r-4: 20px;
+    --r-5: 24px;
+
+    /* ===== Spacing Scale ===== */
+    --s-1: 8px;
+    --s-2: 12px;
+    --s-3: 16px;
+    --s-4: 20px;
+    --s-5: 24px;
+    --s-6: 32px;
+    --s-7: 40px;
+    --s-8: 48px;
+
+    /* ===== Typography ===== */
+    --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* ===== Motion/Animation ===== */
+    --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.16, 1, 0.3, 1);
+    --dur-1: 120ms;
+    --dur-2: 220ms;
+    --dur-3: 380ms;
+    --dur-4: 420ms;
+
+    /* ===== Focus States ===== */
+    --focus-ring: 0 0 0 4px rgba(224, 17, 95, 0.12);
+
+    /* ===== Layout Dimensions ===== */
+    --server-rail: 80px;
+    --channel-rail: 260px;
+
+    /* ===== Z-index Layers ===== */
+    --z-bg: 0;
+    --z-ui: 90;
+    --z-rail: 100;
+    --z-float: 1000;
+    --z-modal: 10000;
+    --z-tooltip: 20000;
+    --z-dropdown: 25000;
+}
+
+/* ----------------------------
+   2) Glass Morphism Utilities
+---------------------------- */
+.glass-panel {
+    background: var(--surface-glass);
+    backdrop-filter: blur(34px) saturate(190%);
+    -webkit-backdrop-filter: blur(34px) saturate(190%);
+    border: 1px solid var(--border-soft);
+}
+
+.glass-card {
+    background: var(--surface-1);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ----------------------------
+   3) Background Gradient (Unified)
+---------------------------- */
+.app-background,
+body.auth-page {
+    background: linear-gradient(135deg, var(--ruby-darker) 0%, var(--ruby-dark) 100%);
+}
+
+/* ----------------------------
+   4) Reduced Motion Support
+---------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ----------------------------
+   5) High Contrast Mode Support
+---------------------------- */
+@media (prefers-contrast: high) {
+    :root {
+        --border-soft: rgba(255, 228, 236, 0.30);
+        --border-strong: rgba(224, 17, 95, 0.50);
+        --text-muted: rgba(255, 228, 236, 0.85);
+    }
+}
