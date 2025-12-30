@@ -218,7 +218,7 @@ router.get('/me/settings', asyncHandler(async (req, res) => {
 router.put('/me/settings', asyncHandler(async (req, res) => {
   const settings = req.body;
   
-  // Validate settings structure (basic validation)
+  // Validate settings structure
   if (!settings || typeof settings !== 'object') {
     return res.status(400).json({
       success: false,
@@ -228,6 +228,71 @@ router.put('/me/settings', asyncHandler(async (req, res) => {
         timestamp: new Date().toISOString()
       }
     });
+  }
+
+  // Validate voice settings if present
+  if (settings.voice) {
+    const voice = settings.voice;
+    if (voice.inputGain !== undefined && (voice.inputGain < 0 || voice.inputGain > 200)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_SETTINGS',
+          message: 'inputGain must be between 0 and 200',
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+    if (voice.inputVolume !== undefined && (voice.inputVolume < 0 || voice.inputVolume > 100)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_SETTINGS',
+          message: 'inputVolume must be between 0 and 100',
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+    if (voice.outputVolume !== undefined && (voice.outputVolume < 0 || voice.outputVolume > 100)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_SETTINGS',
+          message: 'outputVolume must be between 0 and 100',
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+  }
+
+  // Validate video settings if present
+  if (settings.video && settings.video.quality) {
+    const validQualities = ['480p', '720p', '1080p'];
+    if (!validQualities.includes(settings.video.quality)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_SETTINGS',
+          message: 'video.quality must be one of: 480p, 720p, 1080p',
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+  }
+
+  // Validate screen settings if present
+  if (settings.screen && settings.screen.quality) {
+    const validQualities = ['720p', '1080p', '4k'];
+    if (!validQualities.includes(settings.screen.quality)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_SETTINGS',
+          message: 'screen.quality must be one of: 720p, 1080p, 4k',
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
   }
   
   await userSettingsModel.save(req.user.id, settings);

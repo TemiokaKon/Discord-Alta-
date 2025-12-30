@@ -9,6 +9,7 @@ class SettingsModal {
                 outputDevice: 'default',
                 inputVolume: 100,
                 outputVolume: 100,
+                inputGain: 100,
                 noiseSuppression: true,
                 echoCancellation: true,
                 autoGainControl: true,
@@ -25,6 +26,10 @@ class SettingsModal {
             video: {
                 device: 'default',
                 quality: '720p'
+            },
+            screen: {
+                quality: '1080p',
+                includeAudio: false
             }
         };
 
@@ -36,6 +41,18 @@ class SettingsModal {
         this.micAudioContext = null;
         this.micMonitorGain = null;
         this.micAnalyser = null;
+    }
+
+    /**
+     * Helper to ensure screen settings are initialized
+     */
+    ensureScreenSettings() {
+        if (!this.currentSettings.screen) {
+            this.currentSettings.screen = {
+                quality: '1080p',
+                includeAudio: false
+            };
+        }
     }
 
     async show() {
@@ -436,14 +453,14 @@ class SettingsModal {
 
         const screenQualitySelect = document.getElementById('screenQualitySelect');
         screenQualitySelect?.addEventListener('change', (e) => {
-            this.currentSettings.screen = this.currentSettings.screen || {};
+            this.ensureScreenSettings();
             this.currentSettings.screen.quality = e.target.value;
             this.syncSettingsWithCallManager();
         });
 
         const screenAudioToggle = document.getElementById('screenAudioToggle');
         screenAudioToggle?.addEventListener('change', (e) => {
-            this.currentSettings.screen = this.currentSettings.screen || {};
+            this.ensureScreenSettings();
             this.currentSettings.screen.includeAudio = !!e.target.checked;
             this.syncSettingsWithCallManager();
         });
@@ -1054,13 +1071,13 @@ class SettingsModal {
 
             const screenQualitySelect = document.getElementById('screenQualitySelect');
             if (screenQualitySelect) {
-                this.currentSettings.screen = this.currentSettings.screen || {};
+                this.ensureScreenSettings();
                 this.currentSettings.screen.quality = screenQualitySelect.value;
             }
 
             const screenAudioToggle = document.getElementById('screenAudioToggle');
             if (screenAudioToggle) {
-                this.currentSettings.screen = this.currentSettings.screen || {};
+                this.ensureScreenSettings();
                 this.currentSettings.screen.includeAudio = screenAudioToggle.checked;
             }
 

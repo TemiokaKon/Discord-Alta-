@@ -507,27 +507,36 @@ class EnhancedCallManager {
             }
 
             // Try to include system audio if supported and enabled
-            if (includeAudio && navigator.mediaDevices.getDisplayMedia) {
-                try {
-                    constraints.audio = true;
-                } catch (e) {
-                    console.log('System audio not supported');
-                }
+            if (includeAudio) {
+                constraints.audio = true;
             }
             
             this.screenStream = await navigator.mediaDevices.getDisplayMedia(constraints);
+            
+            // Check if audio was actually captured
+            const audioTracks = this.screenStream.getAudioTracks();
+            if (includeAudio && audioTracks.length === 0) {
+                console.log('System audio was requested but not captured - browser may not support it');
+            }
             
             this.isScreenSharing = true;
             
             // Replace video track in peer connections
             const screenTrack = this.screenStream.getVideoTracks()[0];
             
+            // Use async replaceTrack to handle potential errors
+            const replacePromises = [];
             this.peerConnections.forEach((pc) => {
                 const sender = pc.getSenders().find(s => s.track?.kind === 'video');
                 if (sender) {
-                    sender.replaceTrack(screenTrack);
+                    const promise = sender.replaceTrack(screenTrack).catch(err => {
+                        console.error('Failed to replace video track:', err);
+                    });
+                    replacePromises.push(promise);
                 }
             });
+            
+            await Promise.all(replacePromises);
             
             // Handle screen share stop (when user clicks "Stop sharing" in browser UI)
             screenTrack.onended = () => {
@@ -551,7 +560,7 @@ class EnhancedCallManager {
     /**
      * Stop screen sharing and restore camera
      */
-    stopScreenShare() {
+    async stopScreenShare() {
         if (!this.screenStream) return;
         
         // Stop screen tracks
@@ -560,13 +569,17 @@ class EnhancedCallManager {
         this.isScreenSharing = false;
         
         // Restore camera video track if video was enabled
+        const replacePromises = [];
         if (this.localStream && this.isVideoEnabled) {
             const videoTrack = this.localStream.getVideoTracks()[0];
             
             this.peerConnections.forEach((pc) => {
                 const sender = pc.getSenders().find(s => s.track?.kind === 'video');
                 if (sender && videoTrack) {
-                    sender.replaceTrack(videoTrack);
+                    const promise = sender.replaceTrack(videoTrack).catch(err => {
+                        console.error('Failed to restore camera track:', err);
+                    });
+                    replacePromises.push(promise);
                 }
             });
         } else {
@@ -574,10 +587,15 @@ class EnhancedCallManager {
             this.peerConnections.forEach((pc) => {
                 const sender = pc.getSenders().find(s => s.track?.kind === 'video');
                 if (sender) {
-                    sender.replaceTrack(null);
+                    const promise = sender.replaceTrack(null).catch(err => {
+                        console.error('Failed to stop video track:', err);
+                    });
+                    replacePromises.push(promise);
                 }
             });
         }
+        
+        await Promise.all(replacePromises);
         
         // Notify via socket
         if (this.currentCall && socket) {
