@@ -120,6 +120,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Create sparks
             const sparkContainer = document.querySelector('.background-sparks');
+            const floatingContainer = document.querySelector('.floating-elements');
+            const elements = ['💎', '✨', '🌟', '⭐', '💫'];
             const sparkCount = 30; // Уменьшил количество для производительности
             
             for (let i = 0; i < sparkCount; i++) {
