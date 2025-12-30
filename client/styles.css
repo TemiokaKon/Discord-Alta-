@@ -1,0 +1,2684 @@
+/* =========================================================
+   Ruby Discord — Main UI Styles (Refactor v2)
+   HTML менять нельзя — сохраняем текущие классы/структуру.
+   Цели:
+   - единые токены (цвета/радиусы/тени/spacing)
+   - убрать дубли/конфликты (в конце файла было много повторов)
+   - улучшить читаемость и предсказуемость состояний
+   - аккуратнее с blur/animations (performance)
+   - доступность: focus-visible, reduced-motion, high-contrast
+   ========================================================= */
+
+/* ----------------------------
+   0) Reset / Base
+---------------------------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, var(--ruby-darker) 0%, var(--ruby-dark) 100%);
+    color: var(--ruby-light);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+:focus {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.22);
+    outline-offset: 3px;
+}
+
+/* ----------------------------
+   1) Theme tokens
+---------------------------- */
+:root {
+    /* Discord-inspired base colors (used in some UI) */
+    --background-primary: #36393f;
+    --background-secondary: #2f3136;
+    --background-tertiary: #202225;
+    --background-accent: #4f545c;
+
+    --text-normal: #dcddde;
+    --text-muted: #72767d;
+
+    --interactive-normal: #b9bbbe;
+    --interactive-hover: #dcddde;
+    --interactive-active: #fff;
+
+    --brand-experiment: #5865f2;
+
+    --status-online: #43b581;
+    --status-idle: #faa61a;
+    --status-dnd: #f04747;
+    --status-offline: #747f8d;
+
+    /* Ruby theme colors */
+    --ruby-primary: #E0115F;
+    --ruby-secondary: #B80F4D;
+    --ruby-dark: #1A0B0F;
+    --ruby-darker: #14090C;
+    --ruby-light: #FFE4EC;
+    --ruby-glow: #FF2D7A;
+    --ruby-spark: #FF4D8D;
+    --ruby-glass: rgba(255, 228, 236, 0.05);
+
+    /* Surfaces */
+    --surface-0: rgba(20, 9, 12, 0.92);
+    --surface-1: rgba(26, 11, 15, 0.95);
+    --surface-2: rgba(255, 228, 236, 0.03);
+    --surface-3: rgba(255, 228, 236, 0.06);
+
+    /* Borders */
+    --border-soft: rgba(255, 228, 236, 0.10);
+    --border-strong: rgba(224, 17, 95, 0.20);
+    --border-glow: rgba(224, 17, 95, 0.35);
+
+    /* Shadows */
+    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.50);
+    --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.40);
+    --shadow-glow: 0 0 0 1px rgba(224, 17, 95, 0.10);
+
+    /* Radii */
+    --r-1: 8px;
+    --r-2: 12px;
+    --r-3: 16px;
+    --r-4: 20px;
+    --r-5: 24px;
+
+    /* Motion */
+    --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --dur-1: 120ms;
+    --dur-2: 220ms;
+    --dur-3: 360ms;
+
+    /* Layout sizes */
+    --server-rail: 80px;
+    --channel-rail: 260px;
+
+    /* Z-index layers */
+    --z-bg: 0;
+    --z-ui: 90;
+    --z-rail: 100;
+    --z-float: 1000;
+}
+
+/* ----------------------------
+   2) Keyframes (consolidated)
+---------------------------- */
+@keyframes shimmer {
+    0% { background-position: -200% -200%; }
+    100% { background-position: 200% 200%; }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes messageAppear {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(224, 17, 95, 0.30); }
+    50% { box-shadow: 0 0 40px rgba(224, 17, 95, 0.60); }
+}
+
+@keyframes callAppear {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes incomingCallPulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        box-shadow: 0 32px 64px rgba(224, 17, 95, 0.30);
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.02);
+        box-shadow: 0 40px 80px rgba(224, 17, 95, 0.40);
+    }
+}
+
+@keyframes speakingPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(67, 181, 129, 0.7); }
+    50% { box-shadow: 0 0 0 15px rgba(67, 181, 129, 0); }
+}
+
+/* ----------------------------
+   3) Global utility classes (kept)
+---------------------------- */
+.hidden {
+    display: none !important;
+}
+
+.fade-in {
+    animation: messageAppear 0.4s var(--ease-out);
+}
+
+.slide-up {
+    animation: messageAppear 0.4s var(--ease-out);
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+.glow {
+    animation: glow 2s infinite;
+}
+
+/* ----------------------------
+   4) Background layer
+---------------------------- */
+#animatedBackground {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: var(--z-bg);
+}
+
+/* ----------------------------
+   5) Floating Mini Profile
+---------------------------- */
+.floating-profile {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 25000;
+  width: 340px;
+
+  /* форма островка */
+  border-radius: 22px;
+
+  /* стекло */
+  background: rgba(20, 9, 12, 0.42);
+  backdrop-filter: blur(34px) saturate(190%);
+  -webkit-backdrop-filter: blur(34px) saturate(190%);
+
+  /* убираем обычную бордер-линию (она делает "карточку") */
+  border: 0;
+
+  /* тени: обычная + цветной glow */
+  box-shadow:
+    0 24px 70px rgba(0,0,0,0.65),
+    0 0 0 1px rgba(255,228,236,0.10),
+    0 18px 50px rgba(224,17,95,0.22);
+
+  /* "парение" */
+  transform: translateY(10px) scale(0.985);
+  opacity: 0;
+  pointer-events: none;
+
+  /* важно: чтобы псевдоэлементы работали корректно */
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* Градиентная рамка-ореол */
+.floating-profile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px; /* толщина рамки */
+
+  background: linear-gradient(
+    135deg,
+    rgba(255, 45, 122, 0.65),
+    rgba(224, 17, 95, 0.18),
+    rgba(255, 228, 236, 0.16)
+  );
+
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* Верхний "блик" как у стекла */
+.floating-profile::after {
+  content: "";
+  position: absolute;
+  inset: -40% -20% auto -20%;
+  height: 70%;
+  border-radius: 999px;
+
+  background: radial-gradient(
+    closest-side,
+    rgba(255,255,255,0.18),
+    rgba(255,255,255,0.04),
+    transparent 70%
+  );
+
+  transform: rotate(-12deg);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.floating-profile.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  transition:
+    opacity 220ms ease,
+    transform 420ms cubic-bezier(.16,1,.3,1);
+}
+
+.floating-profile.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  transition: opacity 220ms ease, transform 320ms cubic-bezier(.16,1,.3,1);
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(224, 17, 95, 0.18);
+}
+
+.profile-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    display: grid;
+    place-items: center;
+
+    font-weight: 800;
+    font-size: 24px;
+    color: #fff;
+
+    border: 3px solid rgba(255, 255, 255, 0.10);
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-avatar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.10) 50%,
+        transparent 70%);
+    background-size: 200% 200%;
+    animation: shimmer 4s infinite;
+}
+
+.profile-info h3 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.profile-info p {
+    margin: 0;
+    font-size: 14px;
+    color: rgba(255, 228, 236, 0.72);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22C55E;
+    animation: pulse 2s infinite;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 12px;
+
+    background: rgba(255, 228, 236, 0.03);
+    border: 1px solid rgba(255, 228, 236, 0.06);
+    border-radius: 12px;
+
+    transition: transform var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out);
+}
+
+.stat-item:hover {
+    background: rgba(224, 17, 95, 0.06);
+    border-color: rgba(224, 17, 95, 0.22);
+    transform: translateY(-2px);
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: rgba(255, 228, 236, 0.62);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.profile-action-btn {
+    flex: 1;
+
+    padding: 10px;
+    border-radius: 10px;
+
+    background: rgba(255, 228, 236, 0.05);
+    border: 1px solid rgba(255, 228, 236, 0.10);
+
+    color: var(--ruby-light);
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    transition: transform var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out);
+}
+
+.profile-action-btn:hover {
+    background: rgba(224, 17, 95, 0.10);
+    border-color: rgba(224, 17, 95, 0.26);
+    transform: translateY(-2px);
+    color: #fff;
+}
+
+.profile-action-btn i {
+    font-size: 16px;
+}
+
+/* ----------------------------
+   6) Server List (left rail)
+---------------------------- */
+.server-list {
+    width: var(--server-rail);
+    background: linear-gradient(180deg, var(--ruby-darker), rgba(26, 11, 15, 0.90));
+    border-right: 1px solid rgba(224, 17, 95, 0.10);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+
+    padding: 16px 0;
+
+    backdrop-filter: blur(18px);
+    z-index: var(--z-rail);
+    position: relative;
+}
+
+.server-list::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--ruby-primary), transparent);
+}
+
+.server-separator {
+    width: 32px;
+    height: 2px;
+    border-radius: 1px;
+    margin: 4px 0;
+    background: linear-gradient(90deg, transparent, var(--ruby-primary), transparent);
+}
+
+.server-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+
+    background: linear-gradient(135deg, var(--ruby-dark), var(--ruby-darker));
+    border: 2px solid transparent;
+
+    display: grid;
+    place-items: center;
+
+    cursor: pointer;
+    color: var(--ruby-light);
+
+    position: relative;
+    overflow: hidden;
+
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        border-radius var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out);
+}
+
+.server-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-glow));
+    opacity: 0;
+    transition: opacity var(--dur-2) var(--ease-out);
+}
+
+.server-icon:hover {
+    border-radius: 16px;
+    border-color: rgba(224, 17, 95, 0.32);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 32px rgba(224, 17, 95, 0.20);
+}
+
+.server-icon:hover::before {
+    opacity: 0.10;
+}
+
+.server-icon.active {
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    border-color: rgba(224, 17, 95, 0.75);
+    color: #fff;
+    box-shadow: 0 10px 34px rgba(224, 17, 95, 0.35);
+}
+
+.server-icon.active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.10) 50%,
+        transparent 70%);
+    background-size: 200% 200%;
+    animation: shimmer 3s infinite;
+}
+
+.server-icon i,
+.server-icon svg {
+    position: relative;
+    z-index: 1;
+}
+
+/* ----------------------------
+   7) Channel list sidebar
+---------------------------- */
+.channel-list {
+    width: var(--channel-rail);
+    background: linear-gradient(180deg, rgba(26, 11, 15, 0.95), rgba(20, 9, 12, 0.90));
+    border-right: 1px solid rgba(224, 17, 95, 0.10);
+
+    display: flex;
+    flex-direction: column;
+
+    backdrop-filter: blur(18px);
+    z-index: calc(var(--z-rail) - 1);
+}
+
+.server-header {
+    height: 56px;
+    padding: 0 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    border-bottom: 1px solid rgba(224, 17, 95, 0.10);
+    cursor: pointer;
+    position: relative;
+
+    font-weight: 700;
+    transition: background var(--dur-2) var(--ease-out);
+}
+
+.server-header:hover {
+    background: rgba(224, 17, 95, 0.05);
+}
+
+.server-header::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--ruby-primary), transparent);
+}
+
+.server-name {
+    font-size: 18px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, var(--ruby-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.server-dropdown i,
+.server-dropdown svg {
+    opacity: 0.7;
+    transition: transform var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out);
+    color: var(--ruby-light);
+}
+
+.server-header:hover .server-dropdown i,
+.server-header:hover .server-dropdown svg {
+    opacity: 1;
+    transform: rotate(180deg);
+}
+
+/* Views containers */
+.channels-view,
+.dm-list-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 16px;
+}
+
+.channels-container {
+    flex: 1;
+    overflow: auto;
+    padding-right: 8px;
+}
+
+/* Sidebar scrollbar */
+.channels-container::-webkit-scrollbar {
+    width: 6px;
+}
+.channels-container::-webkit-scrollbar-track {
+    background: rgba(26, 11, 15, 0.50);
+    border-radius: 3px;
+}
+.channels-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(var(--ruby-primary), var(--ruby-secondary));
+    border-radius: 3px;
+}
+.channels-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(var(--ruby-glow), var(--ruby-primary));
+}
+
+/* ----------------------------
+   8) Channel categories & channels
+---------------------------- */
+.channel-category {
+    margin-bottom: 24px;
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 12px 8px 8px;
+
+    cursor: pointer;
+    user-select: none;
+
+    color: rgba(255, 228, 236, 0.78);
+    opacity: 0.78;
+
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+
+    transition: opacity var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
+}
+
+.category-header:hover {
+    opacity: 1;
+    color: #fff;
+}
+
+.category-chevron {
+    width: 12px;
+    height: 12px;
+    fill: currentColor;
+    transition: transform var(--dur-2) var(--ease-out);
+}
+
+.category-header[data-collapsible="true"]:hover .category-chevron {
+    transform: rotate(90deg);
+}
+
+.channel-category.collapsed .category-channels {
+    display: none;
+}
+
+.category-add-btn {
+    margin-left: auto;
+    width: 16px;
+    height: 16px;
+
+    background: transparent;
+    border: none;
+
+    color: inherit;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    opacity: 0;
+    transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
+    padding: 0;
+}
+
+.category-header:hover .category-add-btn {
+    opacity: 0.8;
+}
+
+.category-add-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Channel list */
+.category-channels {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.channel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 10px 12px;
+    margin: 4px 0;
+
+    border-radius: 12px;
+    cursor: pointer;
+
+    color: rgba(255, 228, 236, 0.72);
+
+    position: relative;
+    overflow: hidden;
+
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        background var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out);
+}
+
+.channel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,
+        rgba(224, 17, 95, 0) 0%,
+        rgba(224, 17, 95, 0.06) 100%);
+    opacity: 0;
+    transition: opacity var(--dur-2) var(--ease-out);
+    pointer-events: none;
+}
+
+.channel:hover {
+    background: rgba(255, 228, 236, 0.05);
+    color: #fff;
+    transform: translateX(4px);
+}
+
+.channel:hover::before {
+    opacity: 1;
+}
+
+.channel.active {
+    background: linear-gradient(135deg,
+        rgba(224, 17, 95, 0.16),
+        rgba(184, 15, 77, 0.10));
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(224, 17, 95, 0.18);
+    border-left: 3px solid var(--ruby-primary);
+}
+
+.channel svg,
+.channel-icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    opacity: 0.75;
+    flex-shrink: 0;
+}
+
+.channel.active svg,
+.channel.active .channel-icon {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(224, 17, 95, 0.45));
+}
+
+.channel span {
+    font-size: 15px;
+    font-weight: 600;
+    flex: 1;
+}
+
+/* Drag states (JS hooks) */
+.channel.dragging {
+    opacity: 0.55;
+    transform: scale(0.96);
+}
+
+.channel.drag-over {
+    border-top: 2px solid var(--ruby-primary);
+}
+
+/* ----------------------------
+   9) User panel (bottom left)
+---------------------------- */
+.user-panel {
+    height: 64px;
+    padding: 0 16px;
+
+    background: linear-gradient(180deg, rgba(20, 9, 12, 0.90), rgba(26, 11, 15, 0.95));
+    border-top: 1px solid rgba(224, 17, 95, 0.10);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    cursor: pointer;
+    position: relative;
+}
+
+.user-panel::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--ruby-primary), transparent);
+}
+
+.user-panel:hover {
+    background: rgba(224, 17, 95, 0.05);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.avatar-wrapper {
+    position: relative;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    display: grid;
+    place-items: center;
+
+    font-weight: 900;
+    font-size: 16px;
+    color: #fff;
+
+    border: 2px solid rgba(255, 255, 255, 0.10);
+    position: relative;
+    overflow: hidden;
+}
+
+.user-avatar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.10) 50%,
+        transparent 70%);
+    background-size: 200% 200%;
+    animation: shimmer 4s infinite;
+}
+
+.status-indicator.online {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+
+    background: #22C55E;
+    border: 2px solid rgba(20, 9, 12, 0.90);
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.username {
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-status {
+    font-size: 13px;
+    color: rgba(255, 228, 236, 0.74);
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* some markup uses #connectionStatusMini */
+#connectionStatusMini {
+    font-size: 12px;
+    color: rgba(255, 228, 236, 0.60);
+}
+
+/* Buttons in user panel (HTML uses .user-controls button) */
+.user-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.user-controls button {
+    width: 36px;
+    height: 36px;
+
+    border-radius: 10px;
+    border: 1px solid rgba(255, 228, 236, 0.10);
+    background: rgba(255, 228, 236, 0.05);
+
+    color: var(--ruby-light);
+    cursor: pointer;
+
+    display: grid;
+    place-items: center;
+
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out);
+}
+
+.user-controls button:hover {
+    background: rgba(224, 17, 95, 0.12);
+    border-color: rgba(224, 17, 95, 0.28);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.user-controls button:active {
+    transform: translateY(-1px);
+}
+
+/* ----------------------------
+   10) Main content layout
+---------------------------- */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    background: linear-gradient(135deg, var(--ruby-darker) 0%, var(--ruby-dark) 100%);
+    position: relative;
+    z-index: var(--z-ui);
+    min-width: 0;
+}
+
+.chat-view,
+.friends-main-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    min-width: 0;
+}
+
+/* ----------------------------
+   11) Chat header
+---------------------------- */
+.chat-header {
+    height: 56px;
+    padding: 0 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: linear-gradient(180deg, rgba(26, 11, 15, 0.95), rgba(20, 9, 12, 0.90));
+    border-bottom: 1px solid rgba(224, 17, 95, 0.10);
+
+    backdrop-filter: blur(18px);
+    position: relative;
+    z-index: 2;
+}
+
+.chat-header::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--ruby-primary), transparent);
+}
+
+.channel-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.chat-icon,
+.channel-info i,
+.channel-info svg {
+    color: rgba(255, 228, 236, 0.80);
+    opacity: 0.85;
+}
+
+.chat-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.header-toolbar,
+.chat-controls {
+    display: flex;
+    gap: 12px;
+}
+
+.icon-btn {
+    width: 36px;
+    height: 36px;
+
+    border-radius: 10px;
+    border: 1px solid rgba(255, 228, 236, 0.10);
+    background: rgba(255, 228, 236, 0.05);
+
+    color: rgba(255, 228, 236, 0.80);
+    cursor: pointer;
+
+    display: grid;
+    place-items: center;
+
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out);
+}
+
+.icon-btn:hover {
+    background: rgba(224, 17, 95, 0.12);
+    border-color: rgba(224, 17, 95, 0.26);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.icon-btn:active {
+    transform: translateY(-1px);
+}
+
+/* ----------------------------
+   12) Messages area
+---------------------------- */
+.messages {
+    flex: 1;
+    overflow: auto;
+    padding: 24px;
+    background: transparent;
+    position: relative;
+}
+
+/* Messages scrollbar */
+.messages::-webkit-scrollbar {
+    width: 8px;
+}
+.messages::-webkit-scrollbar-track {
+    background: rgba(26, 11, 15, 0.50);
+    border-radius: 4px;
+}
+.messages::-webkit-scrollbar-thumb {
+    background: linear-gradient(var(--ruby-primary), var(--ruby-secondary));
+    border-radius: 4px;
+}
+.messages::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(var(--ruby-glow), var(--ruby-primary));
+}
+
+/* Message group */
+.message-group {
+    margin-bottom: 24px;
+    display: flex;
+
+    padding: 12px 16px;
+    border-radius: var(--r-3);
+
+    transition: background var(--dur-2) var(--ease-out);
+    animation: messageAppear 0.4s var(--ease-out);
+
+    position: relative;
+    overflow: hidden;
+}
+
+.message-group:hover {
+    background: rgba(255, 228, 236, 0.03);
+}
+
+.message-group::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,
+        rgba(224, 17, 95, 0) 0%,
+        rgba(224, 17, 95, 0.04) 100%);
+    opacity: 0;
+    transition: opacity var(--dur-2) var(--ease-out);
+    pointer-events: none;
+}
+
+.message-group:hover::before {
+    opacity: 1;
+}
+
+.message-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    border: 2px solid rgba(255, 255, 255, 0.10);
+
+    display: grid;
+    place-items: center;
+
+    font-weight: 900;
+    color: #fff;
+
+    margin-right: 16px;
+    flex-shrink: 0;
+
+    position: relative;
+    overflow: hidden;
+}
+
+.message-avatar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.10) 50%,
+        transparent 70%);
+    background-size: 200% 200%;
+    animation: shimmer 4s infinite;
+}
+
+.message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.message-author {
+    font-size: 16px;
+    font-weight: 900;
+    color: #fff;
+}
+
+.message-timestamp {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 228, 236, 0.55);
+}
+
+.message-text {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ruby-light);
+    word-wrap: break-word;
+}
+
+.message-text a {
+    color: var(--ruby-primary);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.message-text a:hover {
+    text-decoration: underline;
+}
+
+/* ----------------------------
+   13) Input area (chat)
+   Note: HTML uses .input-area + .message-input-wrapper
+---------------------------- */
+.input-area {
+    padding: 0 16px 24px;
+}
+
+.message-input-wrapper {
+    background: rgba(255, 228, 236, 0.04);
+    border: 2px solid rgba(255, 228, 236, 0.10);
+    border-radius: 12px;
+
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    transition:
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out),
+        transform var(--dur-2) var(--ease-out);
+}
+
+.message-input-wrapper:focus-within {
+    background: rgba(224, 17, 95, 0.06);
+    border-color: rgba(224, 17, 95, 0.28);
+    box-shadow: 0 8px 32px rgba(224, 17, 95, 0.12);
+    transform: translateY(-1px);
+}
+
+.message-input-wrapper input,
+#messageInput {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+
+    padding: 8px 0;
+}
+
+.message-input-wrapper input::placeholder,
+#messageInput::placeholder {
+    color: rgba(255, 228, 236, 0.45);
+}
+
+/* Attach & send buttons inside input */
+.attach-btn,
+.send-btn {
+    width: 40px;
+    height: 40px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: transparent;
+    color: rgba(255, 228, 236, 0.70);
+
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+
+    transition:
+        background var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out),
+        transform var(--dur-2) var(--ease-out);
+}
+
+.attach-btn:hover,
+.send-btn:hover {
+    background: rgba(224, 17, 95, 0.12);
+    color: #fff;
+    transform: scale(1.06);
+}
+
+/* ----------------------------
+   14) Friends interface
+---------------------------- */
+.friends-header {
+    height: 56px;
+    padding: 0 24px;
+
+    display: flex;
+    align-items: center;
+
+    background: linear-gradient(180deg, rgba(26, 11, 15, 0.95), rgba(20, 9, 12, 0.90));
+    border-bottom: 1px solid rgba(224, 17, 95, 0.10);
+
+    backdrop-filter: blur(18px);
+}
+
+.friends-tabs {
+    display: flex;
+    gap: 4px;
+
+    background: rgba(255, 228, 236, 0.03);
+    border: 1px solid rgba(255, 228, 236, 0.10);
+    border-radius: 14px;
+
+    padding: 4px;
+}
+
+.friends-tab {
+    background: transparent;
+    border: none;
+
+    color: rgba(255, 228, 236, 0.70);
+    font-size: 14px;
+    font-weight: 800;
+
+    padding: 10px 18px;
+    border-radius: 12px;
+
+    cursor: pointer;
+
+    transition:
+        background var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out),
+        transform var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out);
+}
+
+.friends-tab:hover {
+    color: #fff;
+    background: rgba(224, 17, 95, 0.12);
+}
+
+.friends-tab.active {
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(224, 17, 95, 0.25);
+}
+
+.friends-content-wrapper {
+    flex: 1;
+    overflow: auto;
+    padding: 24px;
+}
+
+.friends-list {
+    display: none;
+    animation: messageAppear 0.35s var(--ease-out);
+}
+
+.friends-list.active-tab {
+    display: block;
+}
+
+.friends-empty {
+    text-align: center;
+    color: rgba(255, 228, 236, 0.55);
+    padding: 60px 20px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    opacity: 0.65;
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* ----------------------------
+   15) Friend items
+---------------------------- */
+.friend-item {
+    display: flex;
+    align-items: center;
+
+    padding: 16px;
+    border-radius: var(--r-3);
+    margin-bottom: 12px;
+
+    background: rgba(255, 228, 236, 0.02);
+    border: 1px solid rgba(255, 228, 236, 0.06);
+
+    position: relative;
+    overflow: hidden;
+
+    transition:
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        transform var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out);
+}
+
+.friend-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,
+        rgba(224, 17, 95, 0) 0%,
+        rgba(224, 17, 95, 0.06) 100%);
+    opacity: 0;
+    transition: opacity var(--dur-2) var(--ease-out);
+    pointer-events: none;
+}
+
+.friend-item:hover {
+    background: rgba(224, 17, 95, 0.06);
+    border-color: rgba(224, 17, 95, 0.22);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(224, 17, 95, 0.12);
+}
+
+.friend-item:hover::before {
+    opacity: 1;
+}
+
+.friend-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    border: 2px solid rgba(255, 255, 255, 0.10);
+
+    display: grid;
+    place-items: center;
+
+    font-weight: 900;
+    color: #fff;
+
+    margin-right: 16px;
+    flex-shrink: 0;
+
+    position: relative;
+    overflow: hidden;
+}
+
+.friend-avatar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.10) 50%,
+        transparent 70%);
+    background-size: 200% 200%;
+    animation: shimmer 4s infinite;
+}
+
+.friend-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.friend-name {
+    font-size: 16px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 4px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-status {
+    font-size: 13px;
+    font-weight: 700;
+
+    color: #22C55E;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.friend-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 2s infinite;
+}
+
+.friend-status.offline {
+    color: rgba(255, 228, 236, 0.45);
+}
+
+.friend-actions {
+    display: flex;
+    gap: 8px;
+
+    opacity: 0;
+    transition: opacity var(--dur-2) var(--ease-out);
+}
+
+.friend-item:hover .friend-actions {
+    opacity: 1;
+}
+
+.friend-action-btn {
+    width: 36px;
+    height: 36px;
+
+    border-radius: 10px;
+    border: 1px solid rgba(255, 228, 236, 0.10);
+    background: rgba(255, 228, 236, 0.05);
+
+    color: rgba(255, 228, 236, 0.85);
+    cursor: pointer;
+
+    display: grid;
+    place-items: center;
+
+    transition:
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        transform var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out);
+}
+
+.friend-action-btn:hover {
+    background: rgba(224, 17, 95, 0.12);
+    border-color: rgba(224, 17, 95, 0.26);
+    color: #fff;
+    transform: scale(1.08);
+}
+
+.friend-action-btn.accept:hover {
+    background: rgba(34, 197, 94, 0.18);
+    border-color: rgba(34, 197, 94, 0.28);
+    color: #22C55E;
+}
+
+.friend-action-btn.reject:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.28);
+    color: #EF4444;
+}
+
+/* ----------------------------
+   16) Add friend form
+---------------------------- */
+.add-friend-form {
+    padding: 24px;
+    max-width: 600px;
+    margin: 0 auto;
+
+    background: rgba(255, 228, 236, 0.02);
+    border: 1px solid rgba(255, 228, 236, 0.06);
+    border-radius: var(--r-4);
+}
+
+.add-friend-form h3 {
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+
+    background: linear-gradient(135deg, #fff 0%, var(--ruby-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.add-friend-input-wrapper {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.add-friend-input-wrapper input {
+    flex: 1;
+    min-width: 0;
+
+    padding: 14px 16px;
+    border-radius: 14px;
+
+    background: rgba(255, 228, 236, 0.03);
+    border: 2px solid rgba(255, 228, 236, 0.10);
+
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+
+    transition:
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out);
+}
+
+.add-friend-input-wrapper input:focus {
+    outline: none;
+    background: rgba(224, 17, 95, 0.06);
+    border-color: rgba(224, 17, 95, 0.30);
+    box-shadow: 0 0 0 4px rgba(224, 17, 95, 0.12);
+}
+
+.add-friend-input-wrapper input::placeholder {
+    color: rgba(255, 228, 236, 0.45);
+}
+
+.add-friend-input-wrapper button {
+    border: none;
+    border-radius: 14px;
+
+    padding: 14px 20px;
+    min-width: 120px;
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    color: #fff;
+
+    font-size: 15px;
+    font-weight: 900;
+
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out);
+}
+
+.add-friend-input-wrapper button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(224, 17, 95, 0.25);
+}
+
+.add-friend-input-wrapper button:active {
+    transform: translateY(-1px);
+}
+
+#searchResults {
+    margin-top: 24px;
+}
+
+.user-search-item {
+    display: flex;
+    align-items: center;
+
+    padding: 16px;
+    border-radius: var(--r-3);
+    margin-bottom: 12px;
+
+    background: rgba(255, 228, 236, 0.02);
+    border: 1px solid rgba(255, 228, 236, 0.06);
+
+    transition:
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        transform var(--dur-2) var(--ease-out);
+}
+
+.user-search-item:hover {
+    background: rgba(224, 17, 95, 0.06);
+    border-color: rgba(224, 17, 95, 0.22);
+    transform: translateY(-2px);
+}
+
+.user-search-item .user-avatar {
+    width: 44px;
+    height: 44px;
+    margin-right: 16px;
+}
+
+.user-search-item .add-friend-btn {
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    color: #fff;
+
+    font-size: 14px;
+    font-weight: 900;
+
+    cursor: pointer;
+    transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+}
+
+.user-search-item .add-friend-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(224, 17, 95, 0.25);
+}
+
+/* ----------------------------
+   17) Call interface (in-page)
+---------------------------- */
+.call-interface {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    width: 800px;
+    max-width: 90vw;
+    height: 600px;
+    max-height: 90vh;
+
+    background: linear-gradient(135deg, rgba(26, 11, 15, 0.95), rgba(20, 9, 12, 0.95));
+    border: 1px solid rgba(224, 17, 95, 0.20);
+    border-radius: var(--r-5);
+
+    backdrop-filter: blur(34px);
+    -webkit-backdrop-filter: blur(34px);
+
+    z-index: 2000;
+    box-shadow:
+        0 32px 64px rgba(0, 0, 0, 0.50),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    animation: callAppear 0.5s var(--ease-out);
+}
+
+.call-interface.hidden {
+    display: none;
+}
+
+.call-header {
+    height: 64px;
+    padding: 0 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    border-bottom: 1px solid rgba(224, 17, 95, 0.10);
+    background: linear-gradient(180deg, rgba(26, 11, 15, 0.95), rgba(20, 9, 12, 0.90));
+    position: relative;
+}
+
+.call-header::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--ruby-primary), transparent);
+}
+
+.call-channel-name {
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+
+    background: linear-gradient(135deg, #fff 0%, var(--ruby-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.close-call-btn {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 12px;
+    border: 1px solid rgba(239, 68, 68, 0.20);
+    background: rgba(239, 68, 68, 0.10);
+
+    color: #EF4444;
+    cursor: pointer;
+
+    display: grid;
+    place-items: center;
+
+    transition: transform var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out);
+}
+
+.close-call-btn:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.32);
+    transform: scale(1.08);
+}
+
+.call-participants {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+
+    padding: 24px;
+    overflow: auto;
+}
+
+.participant {
+    position: relative;
+    background: rgba(255, 228, 236, 0.03);
+    border: 1px solid rgba(255, 228, 236, 0.06);
+    border-radius: var(--r-4);
+    overflow: hidden;
+}
+
+.participant video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: var(--ruby-darker);
+}
+
+.participant-name {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+
+    background: rgba(26, 11, 15, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(10px);
+
+    padding: 8px 14px;
+    border-radius: 12px;
+
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.call-controls-main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+
+    padding: 18px 24px;
+    background: linear-gradient(180deg, transparent, rgba(26, 11, 15, 0.95));
+    border-top: 1px solid rgba(224, 17, 95, 0.10);
+}
+
+.call-control-btn {
+    width: 56px;
+    height: 56px;
+
+    border-radius: 50%;
+    border: none;
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    color: #fff;
+    cursor: pointer;
+
+    display: grid;
+    place-items: center;
+
+    position: relative;
+    overflow: hidden;
+
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out),
+        filter var(--dur-2) var(--ease-out);
+}
+
+.call-control-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.10) 50%,
+        transparent 70%);
+    background-size: 200% 200%;
+    animation: shimmer 3s infinite;
+    opacity: 0.9;
+}
+
+.call-control-btn:hover {
+    transform: translateY(-4px) scale(1.08);
+    box-shadow: 0 12px 40px rgba(224, 17, 95, 0.35);
+}
+
+.call-control-btn.active {
+    background: linear-gradient(135deg, #EF4444, #DC2626);
+}
+
+.call-control-btn.active:hover {
+    box-shadow: 0 12px 40px rgba(239, 68, 68, 0.35);
+}
+
+/* ----------------------------
+   18) Incoming call pop-up
+---------------------------- */
+.incoming-call {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    width: 400px;
+    max-width: 90vw;
+
+    background: linear-gradient(135deg, rgba(26, 11, 15, 0.95), rgba(20, 9, 12, 0.95));
+    border: 1px solid rgba(224, 17, 95, 0.20);
+    border-radius: var(--r-5);
+
+    backdrop-filter: blur(34px);
+
+    padding: 36px;
+    z-index: 3000;
+
+    box-shadow:
+        0 32px 64px rgba(0, 0, 0, 0.50),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+    text-align: center;
+    animation: incomingCallPulse 0.6s var(--ease-out);
+}
+
+.incoming-call.hidden {
+    display: none;
+}
+
+.incoming-call-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+}
+
+.caller-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.caller-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    border: 3px solid rgba(255, 255, 255, 0.10);
+
+    display: grid;
+    place-items: center;
+
+    font-size: 32px;
+    font-weight: 900;
+    color: #fff;
+}
+
+.caller-name {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+
+    background: linear-gradient(135deg, #fff 0%, var(--ruby-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.incoming-call-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 6px;
+}
+
+.call-action-btn {
+    padding: 14px 22px;
+    min-width: 140px;
+
+    border-radius: 16px;
+    border: 2px solid transparent;
+
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out),
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out);
+}
+
+.call-action-btn.accept {
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    color: #fff;
+}
+
+.call-action-btn.accept:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(224, 17, 95, 0.35);
+}
+
+.call-action-btn.reject {
+    background: rgba(255, 228, 236, 0.06);
+    border-color: rgba(255, 228, 236, 0.10);
+    color: var(--ruby-light);
+}
+
+.call-action-btn.reject:hover {
+    background: rgba(224, 17, 95, 0.12);
+    border-color: rgba(224, 17, 95, 0.26);
+    color: #fff;
+    transform: translateY(-3px);
+}
+
+/* ----------------------------
+   19) Message reactions
+---------------------------- */
+.message-reactions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.reaction {
+    background: rgba(255, 228, 236, 0.05);
+    border: 1px solid rgba(255, 228, 236, 0.10);
+    border-radius: 12px;
+
+    padding: 6px 12px;
+
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255, 228, 236, 0.75);
+
+    cursor: pointer;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out);
+}
+
+.reaction:hover {
+    background: rgba(224, 17, 95, 0.12);
+    border-color: rgba(224, 17, 95, 0.26);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.reaction span {
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--ruby-light);
+}
+
+.add-reaction-btn {
+    background: rgba(255, 228, 236, 0.03);
+    border: 1px solid rgba(255, 228, 236, 0.10);
+    border-radius: 12px;
+
+    padding: 8px 16px;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    color: rgba(255, 228, 236, 0.65);
+    cursor: pointer;
+
+    transition:
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out);
+}
+
+.add-reaction-btn:hover {
+    background: rgba(224, 17, 95, 0.12);
+    border-color: rgba(224, 17, 95, 0.26);
+    color: #fff;
+}
+
+/* ----------------------------
+   20) Emoji picker (if used)
+---------------------------- */
+.emoji-picker {
+    position: absolute;
+    bottom: 80px;
+    right: 24px;
+
+    width: 300px;
+    z-index: 1000;
+
+    padding: 16px;
+    border-radius: 20px;
+
+    background: linear-gradient(135deg, rgba(26, 11, 15, 0.95), rgba(20, 9, 12, 0.95));
+    border: 1px solid rgba(224, 17, 95, 0.20);
+
+    backdrop-filter: blur(34px);
+    box-shadow: var(--shadow-md);
+
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+
+    animation: messageAppear 0.3s var(--ease-out);
+}
+
+.emoji-option {
+    background: transparent;
+    border: none;
+
+    font-size: 24px;
+    cursor: pointer;
+
+    padding: 8px;
+    border-radius: 12px;
+
+    display: grid;
+    place-items: center;
+
+    transition: transform var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out);
+}
+
+.emoji-option:hover {
+    background: rgba(224, 17, 95, 0.12);
+    transform: scale(1.18);
+}
+
+/* ----------------------------
+   21) DM search bar / channel item (kept from bottom section, cleaned)
+---------------------------- */
+.search-bar-container {
+    padding: 0 10px 10px 10px;
+    border-bottom: 1px solid rgba(255, 228, 236, 0.08);
+}
+
+.search-btn {
+    width: 100%;
+    background: rgba(255, 228, 236, 0.04);
+    color: rgba(255, 228, 236, 0.70);
+
+    border: 1px solid rgba(255, 228, 236, 0.08);
+    padding: 10px 12px;
+    border-radius: 10px;
+
+    text-align: left;
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+    transition:
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out),
+        transform var(--dur-2) var(--ease-out);
+}
+
+.search-btn:hover {
+    background: rgba(224, 17, 95, 0.10);
+    border-color: rgba(224, 17, 95, 0.22);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.channel-item {
+    display: flex;
+    align-items: center;
+
+    padding: 10px 10px;
+    margin: 2px 8px;
+
+    border-radius: 10px;
+    cursor: pointer;
+
+    color: rgba(255, 228, 236, 0.70);
+    transition:
+        background var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out),
+        transform var(--dur-2) var(--ease-out);
+}
+
+.channel-item:hover {
+    background: rgba(255, 228, 236, 0.05);
+    color: #fff;
+    transform: translateX(2px);
+}
+
+.avatar-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+
+    margin-right: 12px;
+    display: grid;
+    place-items: center;
+
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+}
+
+.welcome-message {
+    padding: 20px;
+    margin-top: auto;
+    color: rgba(255, 228, 236, 0.75);
+}
+
+.welcome-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+
+    background: var(--brand-experiment);
+    display: grid;
+    place-items: center;
+
+    font-size: 40px;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+/* Input icons group used by some legacy markup */
+.input-icons i,
+.attach-btn i {
+    color: rgba(255, 228, 236, 0.70);
+    cursor: pointer;
+    font-size: 20px;
+    margin: 0 6px;
+    transition: color var(--dur-2) var(--ease-out);
+}
+
+.input-icons i:hover,
+.attach-btn i:hover {
+    color: #fff;
+}
+
+/* ----------------------------
+   22) Connection Status Indicator (bottom-left)
+---------------------------- */
+.connection-status {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+
+    z-index: var(--z-float);
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 14px;
+    border-radius: 12px;
+
+    background: rgba(26, 11, 15, 0.90);
+    border: 1px solid rgba(224, 17, 95, 0.20);
+    backdrop-filter: blur(18px);
+
+    color: var(--ruby-light);
+    font-size: 13px;
+    font-weight: 800;
+
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    animation: slideInRight 0.45s var(--ease-out);
+}
+
+.connection-status.online { color: #22C55E; }
+.connection-status.offline { color: #EF4444; }
+
+/* ----------------------------
+   23) Responsive breakpoints
+---------------------------- */
+@media (max-width: 1200px) {
+    :root {
+        --channel-rail: 240px;
+    }
+
+    .call-interface {
+        width: 700px;
+        height: 500px;
+    }
+
+    .floating-profile {
+        width: 280px;
+    }
+}
+
+@media (max-width: 992px) {
+    :root {
+        --server-rail: 72px;
+        --channel-rail: 220px;
+    }
+
+    .server-list {
+        width: var(--server-rail);
+    }
+
+    .channel-list {
+        width: var(--channel-rail);
+    }
+
+    .call-participants {
+        grid-template-columns: 1fr;
+    }
+
+    .floating-profile {
+     top: 20px;
+     right: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* bottom rail */
+    .server-list {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+
+        width: 100%;
+        height: 72px;
+
+        flex-direction: row;
+        padding: 0 16px;
+
+        border-right: none;
+        border-top: 1px solid rgba(224, 17, 95, 0.10);
+
+        z-index: 1000;
+    }
+
+    .server-separator {
+        width: 2px;
+        height: 32px;
+    }
+
+    /* slide-out channel list */
+    .channel-list {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 72px;
+
+        width: 280px;
+        transform: translateX(-100%);
+        transition: transform var(--dur-3) var(--ease-out);
+
+        z-index: 999;
+    }
+
+    .channel-list.active {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-bottom: 72px;
+    }
+
+    .chat-header {
+        padding: 0 16px;
+    }
+
+    .messages {
+        padding: 16px;
+    }
+
+    .input-area {
+        padding: 0 12px 16px;
+    }
+
+    .call-interface {
+        width: 95vw;
+        height: 60vh;
+        border-radius: 20px;
+    }
+
+    .call-control-btn {
+        width: 48px;
+        height: 48px;
+    }
+
+    .incoming-call {
+        width: 90vw;
+        padding: 28px;
+    }
+
+    .call-action-btn {
+        min-width: 120px;
+        padding: 14px 20px;
+    }
+
+    .floating-profile {
+        right: 12px;
+        top: 12px;
+        width: min(92vw, 360px);
+    }
+
+    .toast-notification-container {
+        right: 10px;
+        left: 10px;
+        bottom: 80px;
+        max-width: none;
+    }
+
+    .toast-notification {
+        min-width: auto;
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .friends-tabs {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .friends-tab {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+
+    .message-group {
+        padding: 12px;
+    }
+
+    .message-avatar {
+        width: 36px;
+        height: 36px;
+        margin-right: 12px;
+    }
+
+    .message-author {
+        font-size: 15px;
+    }
+
+    .message-text {
+        font-size: 15px;
+    }
+
+    .call-interface {
+        height: 70vh;
+    }
+
+    .call-participants {
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .incoming-call-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .call-action-btn {
+        width: 100%;
+        min-width: auto;
+    }
+}
+
+/* ----------------------------
+   24) Toast notifications (Discord style)
+   (kept & cleaned)
+---------------------------- */
+.toast-notification-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+
+    z-index: 20000;
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    pointer-events: none;
+    max-width: 400px;
+}
+
+.toast-notification {
+    pointer-events: all;
+
+    background: rgba(26, 11, 15, 0.98);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+
+    border: 1px solid rgba(224, 17, 95, 0.30);
+    border-radius: 12px;
+
+    padding: 16px;
+    min-width: 320px;
+    max-width: 400px;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.50);
+
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    position: relative;
+    overflow: hidden;
+
+    opacity: 0;
+    transform: translateX(400px);
+    transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out);
+}
+
+.toast-notification.toast-show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-notification.toast-hide {
+    opacity: 0;
+    transform: translateX(400px);
+}
+
+/* Toast type accents */
+.toast-notification.toast-success { border-left: 4px solid #43b581; }
+.toast-notification.toast-error { border-left: 4px solid #f04747; }
+.toast-notification.toast-warning { border-left: 4px solid #faa61a; }
+.toast-notification.toast-info { border-left: 4px solid #5865f2; }
+
+.toast-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+}
+
+.toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.toast-title {
+    font-size: 15px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.toast-message {
+    font-size: 14px;
+    color: rgba(255, 228, 236, 0.82);
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.toast-close {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+
+    background: transparent;
+    border: 1px solid transparent;
+
+    color: rgba(255, 228, 236, 0.65);
+    cursor: pointer;
+
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+
+    transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+}
+
+.toast-close:hover {
+    background: rgba(224, 17, 95, 0.16);
+    border-color: rgba(224, 17, 95, 0.24);
+    color: #fff;
+}
+
+/* Progress bar */
+.toast-progress {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    width: 100%;
+
+    background: linear-gradient(90deg, var(--ruby-primary), var(--ruby-secondary));
+    border-radius: 0 0 12px 12px;
+
+    transition: width 5s linear;
+}
+
+/* ----------------------------
+   25) Accessibility / preferences
+---------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --ruby-dark: #0A0406;
+        --ruby-darker: #050203;
+    }
+}
+
+@media (prefers-contrast: high) {
+    :root {
+        --ruby-primary: #FF0066;
+        --ruby-secondary: #CC0052;
+        --ruby-light: #FFFFFF;
+
+        --border-soft: rgba(255, 255, 255, 0.25);
+        --border-strong: rgba(255, 0, 102, 0.55);
+    }
+
+    .server-list,
+    .channel-list,
+    .call-interface,
+    .floating-profile {
+        border-width: 2px !important;
+        border-color: var(--ruby-primary) !important;
+    }
+}
+
+/* ----------------------------
+   26) Print styles
+---------------------------- */
+@media print {
+    .server-list,
+    .channel-list,
+    .call-interface,
+    .incoming-call,
+    .input-area,
+    .friend-actions,
+    .user-controls,
+    .floating-profile,
+    #animatedBackground,
+    .toast-notification-container,
+    .connection-status {
+        display: none !important;
+    }
+
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    .main-content {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    .message-group {
+        break-inside: avoid;
+        border: 1px solid #ddd;
+    }
+}

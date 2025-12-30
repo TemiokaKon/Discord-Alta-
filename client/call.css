@@ -1,0 +1,419 @@
+/**
+ * Call Interface Styles
+ * Enhanced voice/video call UI with participant management
+ */
+
+/* ===== Call Interface Container ===== */
+.call-interface {
+    position: fixed;
+    top: 0;
+    left: 72px; /* After server list */
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--ruby-darker, #14090C) 0%, var(--ruby-dark, #1A0B0F) 100%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.call-interface.hidden {
+    transform: translateY(100%);
+    pointer-events: none;
+}
+
+/* ===== Call Header ===== */
+.call-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: rgba(255, 228, 236, 0.03);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 228, 236, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.call-channel-name {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--ruby-light, #FFE4EC);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.call-channel-name::before {
+    content: '🎙️';
+    font-size: 1.25rem;
+}
+
+.close-call-btn {
+    background: rgba(240, 71, 71, 0.1);
+    border: 1px solid rgba(240, 71, 71, 0.3);
+    color: #f04747;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.close-call-btn:hover {
+    background: rgba(240, 71, 71, 0.2);
+    border-color: rgba(240, 71, 71, 0.5);
+    transform: translateY(-1px);
+}
+
+.close-call-btn:active {
+    transform: translateY(0);
+}
+
+/* ===== Participants Grid ===== */
+.call-participants {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1.5rem;
+    overflow-y: auto;
+    align-content: start;
+}
+
+/* Responsive grid */
+@media (min-width: 768px) {
+    .call-participants {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+}
+
+@media (min-width: 1200px) {
+    .call-participants {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+}
+
+/* ===== Participant Card ===== */
+.participant {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: rgba(255, 228, 236, 0.05);
+    border: 2px solid rgba(255, 228, 236, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+}
+
+.participant:hover {
+    border-color: rgba(224, 17, 95, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(224, 17, 95, 0.2);
+}
+
+/* Active speaker highlight */
+.participant.speaking {
+    border-color: rgba(67, 181, 129, 0.6);
+    box-shadow: 0 0 20px rgba(67, 181, 129, 0.4);
+    animation: pulse-speaking 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-speaking {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(67, 181, 129, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(67, 181, 129, 0.6);
+    }
+}
+
+/* ===== Participant Video ===== */
+.participant video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ===== Participant Avatar (when no video) ===== */
+.participant-avatar {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--ruby-primary, #E0115F) 0%, var(--ruby-secondary, #B80F4D) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.participant-avatar.hidden {
+    display: none;
+}
+
+/* ===== Participant Info Overlay ===== */
+.participant-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.participant-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.participant-status {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.muted-indicator,
+.speaking-indicator {
+    display: inline-block;
+    font-size: 1rem;
+}
+
+/* ===== Call Controls ===== */
+.call-controls-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(255, 228, 236, 0.03);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 228, 236, 0.1);
+}
+
+.call-control-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 228, 236, 0.2);
+    background: rgba(255, 228, 236, 0.05);
+    color: var(--ruby-light, #FFE4EC);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 1.25rem;
+}
+
+.call-control-btn:hover {
+    background: rgba(255, 228, 236, 0.1);
+    border-color: rgba(224, 17, 95, 0.4);
+    transform: scale(1.1);
+}
+
+.call-control-btn:active {
+    transform: scale(1.05);
+}
+
+.call-control-btn.active {
+    background: linear-gradient(135deg, var(--ruby-primary, #E0115F), var(--ruby-secondary, #B80F4D));
+    border-color: transparent;
+}
+
+.call-control-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.call-control-btn.disabled:hover {
+    transform: none;
+}
+
+/* Danger button (hang up) */
+.call-control-btn.danger {
+    background: rgba(240, 71, 71, 0.2);
+    border-color: rgba(240, 71, 71, 0.4);
+    color: #f04747;
+}
+
+.call-control-btn.danger:hover {
+    background: rgba(240, 71, 71, 0.3);
+    border-color: rgba(240, 71, 71, 0.6);
+}
+
+/* ===== Incoming Call Modal ===== */
+.incoming-call {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, rgba(26, 11, 15, 0.98), rgba(20, 9, 12, 0.98));
+    border: 2px solid rgba(224, 17, 95, 0.3);
+    border-radius: 16px;
+    padding: 2rem;
+    z-index: 1000;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(224, 17, 95, 0.2);
+    backdrop-filter: blur(20px);
+    min-width: 300px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.incoming-call.hidden {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+    pointer-events: none;
+}
+
+.incoming-call-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.caller-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.caller-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--ruby-primary, #E0115F), var(--ruby-secondary, #B80F4D));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    animation: pulse-ring 2s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(224, 17, 95, 0.7);
+    }
+    50% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 15px rgba(224, 17, 95, 0);
+    }
+}
+
+.caller-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--ruby-light, #FFE4EC);
+    text-align: center;
+}
+
+.incoming-call-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.call-action-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.call-action-btn.accept {
+    background: linear-gradient(135deg, #43b581, #3ca374);
+    color: white;
+}
+
+.call-action-btn.accept:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(67, 181, 129, 0.4);
+}
+
+.call-action-btn.reject {
+    background: linear-gradient(135deg, #f04747, #d84040);
+    color: white;
+}
+
+.call-action-btn.reject:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(240, 71, 71, 0.4);
+}
+
+.call-action-btn:active {
+    transform: scale(1.05);
+}
+
+/* ===== Mini Profile Floating Overlay ===== */
+.mini-profile-overlay {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, rgba(26, 11, 15, 0.95), rgba(20, 9, 12, 0.95));
+    border: 2px solid rgba(224, 17, 95, 0.3);
+    border-radius: 16px;
+    padding: 1rem;
+    z-index: 9999;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(224, 17, 95, 0.2);
+    backdrop-filter: blur(20px);
+    min-width: 250px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mini-profile-overlay.hidden {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+}
+
+.mini-profile-overlay:hover {
+    border-color: rgba(224, 17, 95, 0.5);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(224, 17, 95, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .call-interface {
+        left: 0;
+    }
+    
+    .call-participants {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+    
+    .call-controls-main {
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+    
+    .call-control-btn {
+        width: 44px;
+        height: 44px;
+    }
+}

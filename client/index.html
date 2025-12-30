@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alta</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="modals.css" />
+    <link rel="stylesheet" href="call.css" />
+    <!-- Icons (legacy, will be replaced by inline SVG later) -->
+    <link rel="stylesheet" href="font-awesome.css" />
+
+    <!-- Config & utils (load first) -->
+    <script src="config.js"></script>
+    <script src="i18n.js"></script>
+    <script src="svg-icons.js"></script>
+    <script src="ui-utils.js"></script>
+
+    <!-- Socket.IO + app scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="icons.js"></script>
+    <script src="notifications.js"></script>
+    <script src="call-modal.js"></script>
+    <script src="channel-management.js"></script>
+    <script src="enhanced-search.js"></script>
+</head>
+
+<body>
+    <!-- Animated background -->
+    <div id="animatedBackground"></div>
+
+    <!-- 1) LEFT RAIL: servers -->
+    <nav class="server-list" aria-label="Servers">
+        <div class="server-icon home active" id="friendsBtn" title="Личные сообщения">
+            <i class="fas fa-gamepad"></i>
+        </div>
+
+        <div class="server-separator"></div>
+
+        <div class="server-icon" id="addServerBtn" title="Добавить сервер">
+            <i class="fas fa-plus" style="color: #2ecc71;"></i>
+        </div>
+    </nav>
+
+    <!-- 2) SIDEBAR: channels + nav -->
+    <div class="channel-list" id="channelList">
+        <div class="server-header" id="serverHeader">
+            <div class="server-name" id="serverName">Личные сообщения</div>
+            <div class="server-dropdown"><i class="fas fa-chevron-down"></i></div>
+        </div>
+
+        <!-- DM view -->
+        <div id="dmListView" class="dm-list-view">
+            <div class="search-bar-container">
+                <button class="search-btn">Найти или начать беседу</button>
+            </div>
+
+            <div class="channel-category">
+                <div class="category-header">
+                    <i class="fas fa-user-friends"></i> <span>Друзья</span>
+                </div>
+            </div>
+
+            <div class="channel-category">
+                <div class="category-header">
+                    <span>ЛИЧНЫЕ СООБЩЕНИЯ</span>
+                    <i class="fas fa-plus add-btn"></i>
+                </div>
+
+                <div id="dmList" class="dm-list"></div>
+            </div>
+        </div>
+
+        <!-- Server channels view -->
+        <div id="channelsView" class="channels-view" style="display: none;">
+            <div class="channels-container"></div>
+        </div>
+
+        <!-- User panel -->
+        <div class="user-panel">
+            <div class="user-info" id="userPanelTrigger" role="button" tabindex="0" aria-label="Открыть мини-профиль">
+                <div class="avatar-wrapper">
+                    <div class="user-avatar" id="currentUserAvatar">U</div>
+                    <div class="status-indicator online"></div>
+                </div>
+                <div class="user-details">
+                    <div class="username" id="currentUsername">Загрузка...</div>
+                    <div class="user-status" id="connectionStatusMini">Подключено</div>
+                </div>
+            </div>
+
+            <div class="user-controls">
+                <button id="muteBtn" title="Микрофон"><i class="fas fa-microphone"></i></button>
+                <button id="deafenBtn" title="Звук"><i class="fas fa-headphones"></i></button>
+                <button id="settingsBtn" title="Настройки"><i class="fas fa-cog"></i></button>
+                <button id="logoutBtn" title="Выход"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3) MAIN CONTENT -->
+    <main class="main-content">
+        <!-- Chat view -->
+        <div id="chatView" class="chat-view" style="display: none;">
+            <header class="chat-header">
+                <div class="channel-info" id="chatHeaderInfo">
+                    <div class="chat-icon"><i class="fas fa-at"></i></div>
+                    <div class="chat-title">Выберите чат</div>
+                </div>
+                <div class="header-toolbar">
+                    <button class="icon-btn" id="membersBtn"><i class="fas fa-user-friends"></i></button>
+                </div>
+            </header>
+
+            <div class="messages" id="messagesContainer"></div>
+
+            <div class="input-area">
+                <div class="message-input-wrapper">
+                    <button class="attach-btn"><i class="fas fa-plus-circle"></i></button>
+                    <input type="text" id="messageInput" placeholder="Написать сообщение..." />
+                    <button class="send-btn" id="sendMessageBtn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Friends view -->
+        <div id="friendsView" class="friends-main-view">
+            <div class="friends-header">
+                <div class="friends-tabs">
+                    <button class="friends-tab active" data-tab="online">Онлайн</button>
+                    <button class="friends-tab" data-tab="all">Все</button>
+                    <button class="friends-tab" data-tab="pending">Ожидание</button>
+                    <button class="friends-tab add-friend" data-tab="add">Добавить</button>
+                </div>
+            </div>
+
+            <div class="friends-content-wrapper">
+                <div id="friendsOnline" class="friends-list active-tab">
+                    <div class="empty-state">
+                        <i class="fas fa-user-friends"></i>
+                        <p>Никто не играет в Alta прямо сейчас.</p>
+                    </div>
+                </div>
+
+                <div id="friendsAll" class="friends-list" hidden></div>
+                <div id="friendsPending" class="friends-list" hidden></div>
+
+                <div id="friendsAdd" class="friends-list" hidden>
+                    <div class="add-friend-form">
+                        <h3>ДОБАВИТЬ ДРУГА</h3>
+                        <div class="add-friend-input-wrapper">
+                            <input type="text" id="searchUserInput" placeholder="ИмяПользователя#0000" />
+                            <button id="searchUserBtn">Отправить</button>
+                        </div>
+                        <div id="searchResults"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- CALL INTERFACE -->
+    <div id="callInterface" class="call-interface hidden">
+        <div class="call-header">
+            <div class="call-channel-name">Голосовой вызов</div>
+            <button class="close-call-btn" id="closeCallBtn"><i class="fas fa-phone-slash"></i></button>
+        </div>
+        <div class="call-participants">
+            <div class="participant">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="participant-name">Вы</div>
+            </div>
+            <div id="remoteParticipants"></div>
+        </div>
+        <div class="call-controls-main">
+            <button id="toggleVideoBtn" class="call-control-btn"><i class="fas fa-video"></i></button>
+            <button id="toggleAudioBtn" class="call-control-btn"><i class="fas fa-microphone"></i></button>
+            <button id="toggleScreenBtn" class="call-control-btn"><i class="fas fa-desktop"></i></button>
+        </div>
+    </div>
+
+    <!-- INCOMING CALL -->
+    <div id="incomingCall" class="incoming-call hidden">
+        <div class="incoming-call-content">
+            <div class="caller-info">
+                <div class="caller-avatar"></div>
+                <div class="caller-name">Входящий вызов</div>
+            </div>
+            <div class="incoming-call-actions">
+                <button id="acceptCallBtn" class="call-action-btn accept"><i class="fas fa-phone"></i></button>
+                <button id="rejectCallBtn" class="call-action-btn reject"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ FLOATING MINI PROFILE (ISLAND) -->
+    <aside class="floating-profile" id="floatingProfile" aria-hidden="true">
+        <div class="profile-header">
+            <div class="profile-avatar" id="fpAvatar">U</div>
+            <div class="profile-info">
+                <h3 id="fpUsername">Пользователь</h3>
+                <p>
+                    <span class="status-indicator"></span>
+                    <span id="fpStatusText">Онлайн</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="profile-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="fpServers">0</div>
+                <div class="stat-label">Серверы</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="fpFriends">0</div>
+                <div class="stat-label">Друзья</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="fpPing">—</div>
+                <div class="stat-label">Пинг</div>
+            </div>
+        </div>
+
+        <div class="profile-actions">
+            <button class="profile-action-btn" id="fpOpenProfileBtn" type="button">Профиль</button>
+            <button class="profile-action-btn" id="fpSettingsBtn" type="button">Настройки</button>
+        </div>
+    </aside>
+
+    <!-- Scripts -->
+    <script src="enhanced-call.js"></script>
+    <script src="modals.js"></script>
+    <script src="settings-modal.js"></script>
+    <script src="modals/server-create-simple.js"></script>
+    <script src="modals/invite-modal.js"></script>
+    <script src="modals/profile-modal.js"></script>
+    <script src="modals/confirm-modal.js"></script>
+    <script src="utils/lazy-loading.js"></script>
+    <script src="utils/accessibility.js"></script>
+    <script src="script.js"></script>
+
+    <!-- ✅ Floating profile controller -->
+    <script src="floating-profile.js"></script>
+
+    <script src="spark-animations.js"></script>
+</body>
+</html>

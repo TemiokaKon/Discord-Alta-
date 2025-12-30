@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alta</title>
+    <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Favicon чтобы избежать 404 ошибки -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="background-sparks"></div>
+    <div class="floating-elements"></div>
+    
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-gem"></i>
+                </div>
+                <h1>Ruby Discord</h1>
+                <p>Премиум общение в стиле рубина</p>
+            </div>
+
+            <form id="authForm" novalidate> <!-- Добавлен novalidate чтобы убрать HTML5 валидацию -->
+                <div class="form-group" id="usernameGroup" style="display: none;">
+                    <label for="username">
+                        <i class="fas fa-user"></i>
+                        <span>ИМЯ ПОЛЬЗОВАТЕЛЯ</span>
+                    </label>
+                    <input type="text" id="username" name="username" placeholder="Введите ваше имя" required>
+                    <div class="focus-line"></div>
+                </div>
+
+                <div class="form-group" id="emailGroup">
+                    <label for="email">
+                        <i class="fas fa-envelope"></i>
+                        <span>EMAIL</span>
+                    </label>
+                    <input type="email" id="email" name="email" placeholder="example@mail.com" required>
+                    <div class="focus-line"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i>
+                        <span>ПАРОЛЬ</span>
+                    </label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="password" name="password" placeholder="Минимум 6 символов" required>
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="focus-line"></div>
+                </div>
+
+                <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+                    <label for="confirmPassword">
+                        <i class="fas fa-lock"></i>
+                        <span>ПОДТВЕРДИТЕ ПАРОЛЬ</span>
+                    </label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Повторите пароль">
+                        <button type="button" class="password-toggle" id="confirmPasswordToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="focus-line"></div>
+                </div>
+
+                <div class="remember-me" id="rememberMeGroup" style="display: none;">
+                    <input type="checkbox" id="rememberMe" name="rememberMe">
+                    <label for="rememberMe">Запомнить меня</label>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span id="submitText">Войти</span>
+                </button>
+
+                <div class="forgot-password" id="forgotPasswordGroup" style="display: none;">
+                    <a href="#" id="forgotPasswordLink">Забыли пароль?</a>
+                </div>
+
+                <div class="switch-mode">
+                    <span id="switchText">Нет аккаунта?</span>
+                    <a href="#" id="switchLink">Зарегистрироваться</a>
+                </div>
+
+                <div class="social-login">
+                    <p>Или войдите через</p>
+                    <div class="social-buttons">
+                        <button type="button" class="social-btn google" title="Google">
+                            <i class="fab fa-google"></i>
+                        </button>
+                        <button type="button" class="social-btn github" title="GitHub">
+                            <i class="fab fa-github"></i>
+                        </button>
+                        <button type="button" class="social-btn discord" title="Discord">
+                            <i class="fab fa-discord"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">ЗАГРУЗКА</div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        // Initialize spark animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create sparks
+            const sparkContainer = document.querySelector('.background-sparks');
+            const sparkCount = 30; // Уменьшил количество для производительности
+            
+            for (let i = 0; i < sparkCount; i++) {
+                const spark = document.createElement('div');
+                spark.className = 'spark';
+                
+                const left = Math.random() * 100;
+                const delay = Math.random() * 8;
+                const duration = 4 + Math.random() * 4;
+                const size = 2 + Math.random() * 3;
+                
+                spark.style.left = `${left}vw`;
+                spark.style.animationDelay = `${delay}s`;
+                spark.style.animationDuration = `${duration}s`;
+                spark.style.width = `${size}px`;
+                spark.style.height = `${size}px`;
+                
+                // Ruby color gradient
+                const hue = 330 + Math.random() * 20;
+                const saturation = 80 + Math.random() * 20;
+                const lightness = 50 + Math.random() * 20;
+                spark.style.background = `radial-gradient(circle, 
+                    hsl(${hue}, ${saturation}%, ${lightness}%), 
+                    hsl(${hue + 10}, ${saturation}%, ${lightness + 10}%))`;
+                
+                sparkContainer.appendChild(spark);
+            }
+            
+            for (let i = 0; i < 8; i++) { // Уменьшил количество
+                const element = document.createElement('div');
+                element.textContent = elements[Math.floor(Math.random() * elements.length)];
+                
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                const delay = Math.random() * 5;
+                const duration = 10 + Math.random() * 20;
+                
+                element.style.left = `${left}%`;
+                element.style.top = `${top}%`;
+                element.style.animationDelay = `${delay}s`;
+                element.style.animationDuration = `${duration}s`;
+                
+                floatingContainer.appendChild(element);
+            }
+            
+            // Password toggle functionality
+            const passwordToggle = document.getElementById('passwordToggle');
+            const confirmPasswordToggle = document.getElementById('confirmPasswordToggle');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            
+            function togglePasswordVisibility(input, toggleBtn) {
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                toggleBtn.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+            }
+            
+            if (passwordToggle && passwordInput) {
+                passwordToggle.addEventListener('click', () => togglePasswordVisibility(passwordInput, passwordToggle));
+            }
+            
+            if (confirmPasswordToggle && confirmPasswordInput) {
+                confirmPasswordToggle.addEventListener('click', () => togglePasswordVisibility(confirmPasswordInput, confirmPasswordToggle));
+            }
+            
+            // Fix для ошибки с полем username
+            const usernameInput = document.getElementById('username');
+            if (usernameInput) {
+                // Убираем required атрибут когда поле скрыто
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.attributeName === 'style') {
+                            const isVisible = usernameInput.parentElement.style.display !== 'none';
+                            usernameInput.required = isVisible;
+                            if (!isVisible) {
+                                usernameInput.value = '';
+                            }
+                        }
+                    });
+                });
+                
+                observer.observe(usernameInput.parentElement, { attributes: true });
+            }
+        });
+    </script>
+</body>
+</html>

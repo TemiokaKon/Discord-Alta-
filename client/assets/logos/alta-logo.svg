@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Ruby gemstone logo with liquid glass effect -->
+  <defs>
+    <linearGradient id="rubyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF2D7A;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#E0115F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B80F4D;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="glassShine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Main ruby gemstone shape -->
+  <g filter="url(#glow)">
+    <!-- Top facet -->
+    <path d="M 50 10 L 70 35 L 50 30 L 30 35 Z" fill="url(#rubyGradient)" opacity="0.9"/>
+    
+    <!-- Left facet -->
+    <path d="M 30 35 L 50 30 L 50 50 L 25 60 Z" fill="#B80F4D" opacity="0.85"/>
+    
+    <!-- Right facet -->
+    <path d="M 70 35 L 50 30 L 50 50 L 75 60 Z" fill="#E0115F" opacity="0.9"/>
+    
+    <!-- Bottom left facet -->
+    <path d="M 25 60 L 50 50 L 50 90 Z" fill="#8B0A3C" opacity="0.8"/>
+    
+    <!-- Bottom right facet -->
+    <path d="M 75 60 L 50 50 L 50 90 Z" fill="#A00F4A" opacity="0.85"/>
+    
+    <!-- Center highlight (liquid glass effect) -->
+    <path d="M 50 30 L 60 40 L 50 50 L 40 40 Z" fill="url(#glassShine)" opacity="0.6"/>
+    
+    <!-- Top shine -->
+    <ellipse cx="50" cy="25" rx="12" ry="6" fill="#FFFFFF" opacity="0.3"/>
+  </g>
+  
+  <!-- Letter 'A' integrated -->
+  <path d="M 45 45 L 50 30 L 55 45 M 47 42 L 53 42" 
+        stroke="#FFE4EC" 
+        stroke-width="2" 
+        stroke-linecap="round" 
+        fill="none" 
+        opacity="0.8"/>
+</svg>

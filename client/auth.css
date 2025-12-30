@@ -1,0 +1,1097 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ----------------------------
+   0) Reset / Base
+---------------------------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body, h1, p {
+    margin: 0;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ----------------------------
+   1) Theme tokens
+---------------------------- */
+:root {
+    /* Brand (Ruby) */
+    --ruby-primary: #E0115F;
+    --ruby-secondary: #B80F4D;
+    --ruby-dark: #1A0B0F;
+    --ruby-darker: #14090C;
+    --ruby-light: #FFE4EC;
+    --ruby-glow: #FF2D7A;
+    --ruby-spark: #FF4D8D;
+
+    /* Surfaces */
+    --surface-0: color-mix(in srgb, var(--ruby-darker) 92%, black 8%);
+    --surface-1: rgba(26, 11, 15, 0.88); /* main card */
+    --surface-2: rgba(255, 228, 236, 0.05); /* input bg */
+    --surface-3: rgba(255, 228, 236, 0.08); /* hover input bg */
+
+    /* Borders */
+    --border-soft: rgba(255, 228, 236, 0.10);
+    --border-strong: rgba(224, 17, 95, 0.25);
+    --border-glow: rgba(224, 17, 95, 0.40);
+
+    /* Text */
+    --text-strong: #ffffff;
+    --text: rgba(255, 228, 236, 0.88);
+    --text-muted: rgba(255, 228, 236, 0.70);
+    --text-dim: rgba(255, 228, 236, 0.45);
+
+    /* Status */
+    --danger-1: rgba(220, 38, 38, 0.92);
+    --danger-2: rgba(185, 28, 28, 0.92);
+    --success-1: rgba(34, 197, 94, 0.92);
+    --success-2: rgba(21, 128, 61, 0.92);
+
+    /* Shadows */
+    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.45);
+    --shadow-glow: 0 0 0 1px rgba(224, 17, 95, 0.10);
+
+    /* Radii */
+    --r-1: 8px;
+    --r-2: 12px;
+    --r-3: 16px;
+    --r-4: 20px;
+    --r-5: 24px;
+
+    /* Spacing */
+    --s-1: 8px;
+    --s-2: 12px;
+    --s-3: 16px;
+    --s-4: 20px;
+    --s-5: 24px;
+    --s-6: 32px;
+    --s-7: 40px;
+    --s-8: 48px;
+
+    /* Typography */
+    --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+    /* Motion */
+    --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+    --dur-1: 120ms;
+    --dur-2: 220ms;
+    --dur-3: 380ms;
+
+    /* Focus ring */
+    --focus-ring: 0 0 0 4px rgba(224, 17, 95, 0.12);
+}
+
+/* ----------------------------
+   2) Keyframes (kept/cleaned)
+---------------------------- */
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 18px rgba(224, 17, 95, 0.45); }
+    50% { box-shadow: 0 0 40px rgba(224, 17, 95, 0.75); }
+}
+
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInCard {
+    from { opacity: 0; transform: translateY(22px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes shakeX {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+
+@keyframes sparkFloat {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    12% { opacity: 1; }
+    88% { opacity: 1; }
+    100% { transform: translateY(-120px) rotate(360deg); opacity: 0; }
+}
+
+@keyframes pulseText {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ----------------------------
+   3) Page layout
+---------------------------- */
+body {
+    font-family: var(--font-sans);
+    color: var(--text);
+    background: linear-gradient(135deg, var(--ruby-darker) 0%, var(--ruby-dark) 100%);
+    min-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Decorative layers */
+.background-sparks,
+.floating-elements {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.spark {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    filter: blur(1px);
+    background: radial-gradient(circle, var(--ruby-spark), var(--ruby-glow));
+    animation: sparkFloat 8s linear infinite;
+    will-change: transform, opacity;
+}
+
+.floating-elements div {
+    position: absolute;
+    font-size: 24px;
+    opacity: 0.10;
+    filter: blur(0.5px);
+    user-select: none;
+    animation: float 20s ease-in-out infinite;
+    will-change: transform;
+}
+
+/* ----------------------------
+   4) Auth container/card
+---------------------------- */
+.auth-container {
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+    z-index: 2;
+    animation: fadeInCard 0.8s var(--ease-out);
+}
+
+.auth-box {
+    position: relative;
+    overflow: hidden;
+
+    background: var(--surface-1);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-5);
+
+    padding: 48px 40px;
+
+    box-shadow:
+        var(--shadow-xl),
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        var(--shadow-glow);
+}
+
+/* Top highlight line */
+.auth-box::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(224, 17, 95, 0.50),
+        rgba(255, 45, 122, 0.45),
+        transparent);
+}
+
+/* Soft diagonal tint */
+.auth-box::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,
+        transparent 0%,
+        rgba(224, 17, 95, 0.05) 50%,
+        transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ----------------------------
+   5) Logo
+---------------------------- */
+.logo {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: float 6s ease-in-out infinite;
+    position: relative;
+    z-index: 1;
+}
+
+.logo-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+
+    border-radius: var(--r-4);
+    border: 2px solid rgba(255, 255, 255, 0.10);
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    display: grid;
+    place-items: center;
+
+    animation: pulseGlow 3s infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.logo-icon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.12) 50%,
+        transparent 70%);
+    background-size: 200% 200%;
+    animation: shimmer 3s infinite;
+    border-radius: inherit;
+}
+
+.logo-icon i {
+    font-size: 32px;
+    color: #fff;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+    position: relative;
+    z-index: 1;
+}
+
+.logo h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 12px;
+
+    background: linear-gradient(135deg, #fff 0%, var(--ruby-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.logo p {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+/* ----------------------------
+   6) Form groups & inputs
+---------------------------- */
+form#authForm {
+    position: relative;
+    z-index: 1;
+}
+
+.form-group {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+
+    color: var(--text);
+    margin-bottom: 10px;
+    padding-left: 4px;
+}
+
+.form-group label i {
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 16px 20px;
+
+    color: var(--text-strong);
+    font-size: 16px;
+    font-weight: 500;
+
+    border-radius: var(--r-3);
+    border: 2px solid var(--border-soft);
+
+    background: var(--surface-2);
+    backdrop-filter: blur(10px);
+
+    transition:
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        transform var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out);
+
+    font-family: var(--font-sans);
+}
+
+.form-group input::placeholder {
+    color: var(--text-dim);
+}
+
+.form-group input:hover {
+    background: var(--surface-3);
+    border-color: rgba(224, 17, 95, 0.28);
+}
+
+.form-group input:focus {
+    outline: none;
+    background: rgba(224, 17, 95, 0.06);
+    border-color: var(--ruby-primary);
+    box-shadow: var(--focus-ring);
+    transform: translateY(-1px);
+}
+
+/* Better keyboard focus */
+.form-group input:focus-visible,
+.submit-btn:focus-visible,
+.password-toggle:focus-visible,
+.social-btn:focus-visible,
+.switch-mode a:focus-visible,
+.forgot-password a:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.25);
+    outline-offset: 3px;
+}
+
+/* Focus line (kept for existing markup) */
+.focus-line {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 1px;
+
+    background: linear-gradient(90deg, var(--ruby-primary), var(--ruby-glow));
+    transform: scaleX(0);
+    transform-origin: left;
+
+    transition: transform var(--dur-2) var(--ease-out);
+}
+
+.form-group input:focus + .focus-line {
+    transform: scaleX(1);
+}
+
+/* Password wrapper + right padding */
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-input-wrapper input {
+    padding-right: 60px;
+}
+
+/* Password toggle button */
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+
+    width: 40px;
+    height: 40px;
+
+    border: 1px solid transparent;
+    background: transparent;
+
+    color: rgba(255, 228, 236, 0.55);
+    cursor: pointer;
+
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+
+    transition:
+        background var(--dur-1) var(--ease-out),
+        color var(--dur-1) var(--ease-out),
+        border-color var(--dur-1) var(--ease-out);
+}
+
+.password-toggle:hover {
+    color: var(--text-strong);
+    background: rgba(255, 228, 236, 0.06);
+    border-color: rgba(255, 228, 236, 0.08);
+}
+
+.password-toggle:active {
+    background: rgba(255, 228, 236, 0.09);
+}
+
+/* ----------------------------
+   7) Remember me
+---------------------------- */
+.remember-me {
+    display: flex; /* показываем/скрываем через inline style/JS */
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.remember-me input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+
+    background: rgba(255, 228, 236, 0.05);
+    border: 2px solid var(--border-soft);
+
+    cursor: pointer;
+    transition:
+        background var(--dur-1) var(--ease-out),
+        border-color var(--dur-1) var(--ease-out),
+        transform var(--dur-1) var(--ease-out);
+
+    appearance: none;
+    display: grid;
+    place-items: center;
+}
+
+.remember-me input[type="checkbox"]:hover {
+    border-color: rgba(224, 17, 95, 0.30);
+    transform: translateY(-1px);
+}
+
+.remember-me input[type="checkbox"]:checked {
+    background: var(--ruby-primary);
+    border-color: var(--ruby-primary);
+}
+
+.remember-me input[type="checkbox"]:checked::after {
+    content: "✓";
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.remember-me label {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ----------------------------
+   8) Submit button
+---------------------------- */
+.submit-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 18px;
+
+    border: 0;
+    border-radius: var(--r-3);
+    cursor: pointer;
+
+    background: linear-gradient(135deg, var(--ruby-primary), var(--ruby-secondary));
+    color: #fff;
+
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    position: relative;
+    overflow: hidden;
+
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out),
+        filter var(--dur-2) var(--ease-out),
+        opacity var(--dur-2) var(--ease-out);
+}
+
+.submit-btn i {
+    font-size: 18px;
+}
+
+.submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.22),
+        transparent
+    );
+
+    transition: left 600ms ease;
+}
+
+.submit-btn:hover::before {
+    left: 100%;
+}
+
+.submit-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(224, 17, 95, 0.42);
+    filter: saturate(1.05);
+}
+
+.submit-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(224, 17, 95, 0.32);
+}
+
+.submit-btn:disabled {
+    opacity: 0.62;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ----------------------------
+   9) Switch mode text/link
+---------------------------- */
+.switch-mode {
+    margin-top: 24px;
+    text-align: center;
+
+    font-size: 14px;
+    color: var(--text-muted);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.switch-mode a {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 700;
+    position: relative;
+    transition: color var(--dur-2) var(--ease-out);
+}
+
+.switch-mode a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    height: 2px;
+    width: 0;
+
+    background: var(--ruby-primary);
+    border-radius: 1px;
+
+    transition: width var(--dur-2) var(--ease-out);
+}
+
+.switch-mode a:hover {
+    color: #fff;
+}
+
+.switch-mode a:hover::after {
+    width: 100%;
+}
+
+/* ----------------------------
+   10) Forgot password
+---------------------------- */
+.forgot-password {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.forgot-password a {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color var(--dur-2) var(--ease-out), text-decoration-color var(--dur-2) var(--ease-out);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+}
+
+.forgot-password a:hover {
+    color: #fff;
+    text-decoration-color: rgba(255, 255, 255, 0.6);
+}
+
+/* ----------------------------
+   11) Messages (error/success)
+   Fix: remove conflicting display rules.
+---------------------------- */
+.error-message,
+.success-message {
+    padding: 16px 18px;
+    border-radius: var(--r-3);
+    margin-bottom: 24px;
+
+    font-size: 14px;
+    line-height: 1.35;
+
+    display: none; /* base hidden */
+    align-items: center;
+    gap: 10px;
+
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+
+    border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.error-message i,
+.success-message i {
+    font-size: 18px;
+    opacity: 0.95;
+}
+
+.error-message {
+    background: linear-gradient(135deg, var(--danger-1), var(--danger-2));
+    border-color: rgba(248, 113, 113, 0.30);
+}
+
+.success-message {
+    background: linear-gradient(135deg, var(--success-1), var(--success-2));
+    border-color: rgba(74, 222, 128, 0.30);
+}
+
+.error-message.show,
+.success-message.show {
+    display: flex;
+    animation: slideInUp var(--dur-3) var(--ease-out);
+}
+
+/* Optional: if some markup uses shake animation on .auth-box */
+.shake-animation {
+    animation: shakeX 420ms var(--ease-out);
+}
+
+/* ----------------------------
+   12) Loading overlay
+---------------------------- */
+.loading {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+
+    background: rgba(26, 11, 15, 0.95);
+    backdrop-filter: blur(18px);
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+
+    padding: 24px;
+}
+
+.loading.show {
+    display: flex;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+
+    border-radius: 50%;
+    border: 4px solid rgba(255, 228, 236, 0.10);
+    border-top-color: var(--ruby-primary);
+    border-right-color: var(--ruby-glow);
+
+    animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    position: relative;
+}
+
+.spinner::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+
+    border-radius: 50%;
+    background: conic-gradient(transparent, var(--ruby-primary), transparent);
+
+    animation: spin 0.85s linear infinite;
+    filter: blur(10px);
+    opacity: 0.30;
+}
+
+.loading-text {
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    animation: pulseText 2s infinite;
+}
+
+/* ----------------------------
+   13) Social login
+---------------------------- */
+.social-login {
+    margin-top: 24px;
+    text-align: center;
+}
+
+.social-login p {
+    color: rgba(255, 228, 236, 0.55);
+    font-size: 14px;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.social-login p::before,
+.social-login p::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    height: 1px;
+    width: 30%;
+    background: rgba(255, 228, 236, 0.12);
+}
+
+.social-login p::before { left: 0; }
+.social-login p::after { right: 0; }
+
+.social-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.social-btn {
+    width: 44px;
+    height: 44px;
+
+    border-radius: 12px;
+    border: 2px solid rgba(255, 228, 236, 0.10);
+    background: rgba(255, 228, 236, 0.03);
+
+    color: var(--text);
+    font-size: 18px;
+
+    cursor: pointer;
+
+    display: grid;
+    place-items: center;
+
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out),
+        background var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out),
+        color var(--dur-2) var(--ease-out);
+}
+
+.social-btn:hover {
+    transform: translateY(-2px);
+    background: rgba(224, 17, 95, 0.05);
+    border-color: rgba(224, 17, 95, 0.30);
+    box-shadow: 0 6px 18px rgba(224, 17, 95, 0.12);
+    color: #fff;
+}
+
+.social-btn.google:hover {
+    border-color: #DB4437;
+    background: rgba(219, 68, 55, 0.06);
+    box-shadow: 0 6px 18px rgba(219, 68, 55, 0.12);
+}
+
+.social-btn.github:hover {
+    border-color: #333;
+    background: rgba(51, 51, 51, 0.06);
+    box-shadow: 0 6px 18px rgba(51, 51, 51, 0.12);
+}
+
+.social-btn.discord:hover {
+    border-color: #5865F2;
+    background: rgba(88, 101, 242, 0.08);
+    box-shadow: 0 6px 18px rgba(88, 101, 242, 0.14);
+}
+
+/* ----------------------------
+   14) Scrollbar (page-level)
+---------------------------- */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(26, 11, 15, 0.55);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(var(--ruby-primary), var(--ruby-secondary));
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(var(--ruby-glow), var(--ruby-primary));
+}
+
+/* ----------------------------
+   15) Responsive
+---------------------------- */
+@media (max-width: 640px) {
+    .auth-box {
+        padding: 32px 24px;
+        border-radius: 20px;
+    }
+
+    .logo {
+        margin-bottom: 32px;
+    }
+
+    .logo h1 {
+        font-size: 24px;
+    }
+
+    .logo p {
+        font-size: 14px;
+    }
+
+    .logo-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+    }
+
+    .logo-icon i {
+        font-size: 26px;
+    }
+
+    .form-group input {
+        padding: 14px 16px;
+    }
+
+    .password-input-wrapper input {
+        padding-right: 56px;
+    }
+
+    .password-toggle {
+        width: 38px;
+        height: 38px;
+        right: 10px;
+        border-radius: 10px;
+    }
+
+    .submit-btn {
+        padding: 16px;
+        font-size: 15px;
+    }
+
+    .social-buttons {
+        flex-wrap: wrap;
+    }
+
+    .social-btn {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 16px;
+    }
+
+    .auth-box {
+        padding: 24px 20px;
+        border-radius: 16px;
+    }
+
+    .logo h1 {
+        font-size: 22px;
+    }
+
+    .logo p {
+        font-size: 13px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group input {
+        padding: 12px 16px;
+        font-size: 15px;
+    }
+
+    .submit-btn {
+        padding: 14px;
+        font-size: 14px;
+    }
+
+    .switch-mode {
+        font-size: 13px;
+    }
+}
+
+/* ----------------------------
+   16) User preference media
+---------------------------- */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --ruby-dark: #0A0406;
+        --ruby-darker: #050203;
+    }
+
+    .auth-box {
+        background: rgba(10, 4, 6, 0.90);
+    }
+}
+
+@media (prefers-contrast: high) {
+    :root {
+        --ruby-primary: #FF0066;
+        --ruby-secondary: #CC0052;
+        --ruby-light: #FFFFFF;
+
+        --text: rgba(255, 255, 255, 0.92);
+        --text-muted: rgba(255, 255, 255, 0.80);
+        --text-dim: rgba(255, 255, 255, 0.60);
+
+        --border-soft: rgba(255, 255, 255, 0.25);
+        --border-strong: rgba(255, 0, 102, 0.55);
+    }
+
+    .auth-box {
+        border: 2px solid var(--ruby-primary);
+    }
+
+    .form-group input {
+        border-width: 2px;
+        border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .submit-btn {
+        box-shadow: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .background-sparks,
+    .floating-elements {
+        display: none !important;
+    }
+
+    .auth-container {
+        animation: none !important;
+    }
+
+    .logo {
+        animation: none !important;
+    }
+}
+
+/* ----------------------------
+   17) Print styles
+---------------------------- */
+@media print {
+    .background-sparks,
+    .floating-elements,
+    .submit-btn,
+    .social-login,
+    .password-toggle {
+        display: none !important;
+    }
+
+    body {
+        background: #fff !important;
+        color: #000 !important;
+        padding: 0 !important;
+    }
+
+    .auth-container {
+        max-width: 100% !important;
+        animation: none !important;
+    }
+
+    .auth-box {
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        background: #fff !important;
+    }
+
+    .logo h1 {
+        -webkit-text-fill-color: initial !important;
+        color: #000 !important;
+    }
+
+    .logo p {
+        color: #333 !important;
+    }
+
+    .form-group input {
+        border: 1px solid #ccc !important;
+        background: #fff !important;
+        color: #000 !important;
+        box-shadow: none !important;
+    }
+}
