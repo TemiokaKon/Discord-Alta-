@@ -412,21 +412,6 @@ class EnhancedCallManager {
             console.error('Failed to setup audio analysis:', error);
         }
     }
-                
-                if (wasSpeaking !== this.isSpeaking) {
-                    this.updateParticipantStatus('local', {
-                        speaking: this.isSpeaking
-                    });
-                }
-                
-                requestAnimationFrame(detectSpeaking);
-            };
-            
-            detectSpeaking();
-        } catch (error) {
-            console.error('Failed to setup audio analysis:', error);
-        }
-    }
 
     /**
      * Toggle audio
