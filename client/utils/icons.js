@@ -6,7 +6,7 @@
  */
 
 class IconLoader {
-  constructor(baseUrl = '/client/assets/icons/') {
+  constructor(baseUrl = '/assets/icons/') {
     this.baseUrl = baseUrl;
     this.cache = new Map();
     this.loading = new Map();

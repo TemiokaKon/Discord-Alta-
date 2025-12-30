@@ -6,7 +6,7 @@
 const SVGIcons = {
     // Icon cache
     cache: new Map(),
-    basePath: '/client/assets/icons/',
+    basePath: '/assets/icons/',
 
     /**
      * Get inline SVG icon
