@@ -176,6 +176,103 @@ function initializeSocketIO(server) {
       }
     });
 
+    // Unified call signaling for channel-based calls
+    socket.on('join-call', (data) => {
+      const { channelId, mediaState } = data;
+      const callRoom = `call:${channelId}`;
+      
+      socket.join(callRoom);
+      
+      // Notify other participants
+      socket.to(callRoom).emit('user-joined-call', {
+        userId,
+        username: socket.user.username,
+        avatar: socket.user.avatar,
+        mediaState: mediaState || { audio: true, video: false, screen: false }
+      });
+      
+      logger.info('User joined call', { userId, channelId });
+    });
+
+    socket.on('leave-call', (data) => {
+      const { channelId } = data;
+      const callRoom = `call:${channelId}`;
+      
+      socket.leave(callRoom);
+      
+      // Notify other participants
+      socket.to(callRoom).emit('user-left-call', {
+        userId,
+        username: socket.user.username
+      });
+      
+      logger.info('User left call', { userId, channelId });
+    });
+
+    socket.on('offer', (data) => {
+      const { targetUserId, offer, channelId } = data;
+      const targetSocketId = onlineUsers.get(parseInt(targetUserId));
+      
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('offer', {
+          fromUserId: userId,
+          fromUsername: socket.user.username,
+          offer,
+          channelId
+        });
+      }
+    });
+
+    socket.on('answer', (data) => {
+      const { targetUserId, answer, channelId } = data;
+      const targetSocketId = onlineUsers.get(parseInt(targetUserId));
+      
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('answer', {
+          fromUserId: userId,
+          fromUsername: socket.user.username,
+          answer,
+          channelId
+        });
+      }
+    });
+
+    socket.on('media-state', (data) => {
+      const { channelId, state } = data;
+      const callRoom = `call:${channelId}`;
+      
+      // Broadcast media state to all participants in call
+      socket.to(callRoom).emit('user-media-state', {
+        userId,
+        username: socket.user.username,
+        state
+      });
+    });
+
+    socket.on('screen-share-start', (data) => {
+      const { channelId } = data;
+      const callRoom = `call:${channelId}`;
+      
+      socket.to(callRoom).emit('user-screen-share-started', {
+        userId,
+        username: socket.user.username
+      });
+      
+      logger.info('User started screen share', { userId, channelId });
+    });
+
+    socket.on('screen-share-stop', (data) => {
+      const { channelId } = data;
+      const callRoom = `call:${channelId}`;
+      
+      socket.to(callRoom).emit('user-screen-share-stopped', {
+        userId,
+        username: socket.user.username
+      });
+      
+      logger.info('User stopped screen share', { userId, channelId });
+    });
+
     // Handle reactions
     socket.on('add-reaction', async (data) => {
       try {

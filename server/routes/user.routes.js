@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const userModel = require('../models/user.model');
+const userSettingsModel = require('../models/user-settings.model');
 const config = require('../config/environment');
 const { authenticateToken } = require('../middleware/auth.middleware');
 const { validate, schemas } = require('../middleware/validation.middleware');
@@ -190,6 +191,51 @@ router.put('/me/password', validate(schemas.changePassword), asyncHandler(async 
   res.json({
     success: true,
     data: { message: 'Password changed successfully' },
+    timestamp: new Date().toISOString()
+  });
+}));
+
+/**
+ * @route   GET /api/v1/users/me/settings
+ * @desc    Get current user settings
+ * @access  Private
+ */
+router.get('/me/settings', asyncHandler(async (req, res) => {
+  const settings = await userSettingsModel.get(req.user.id);
+  
+  res.json({
+    success: true,
+    data: { settings },
+    timestamp: new Date().toISOString()
+  });
+}));
+
+/**
+ * @route   PUT /api/v1/users/me/settings
+ * @desc    Update current user settings
+ * @access  Private
+ */
+router.put('/me/settings', asyncHandler(async (req, res) => {
+  const settings = req.body;
+  
+  // Validate settings structure (basic validation)
+  if (!settings || typeof settings !== 'object') {
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: 'INVALID_SETTINGS',
+        message: 'Settings must be a valid object',
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+  
+  await userSettingsModel.save(req.user.id, settings);
+  const updatedSettings = await userSettingsModel.get(req.user.id);
+  
+  res.json({
+    success: true,
+    data: { settings: updatedSettings },
     timestamp: new Date().toISOString()
   });
 }));
