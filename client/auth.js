@@ -89,8 +89,8 @@ function updateUITexts() {
         submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span id="submitText">Войти</span>';
         switchText.textContent = 'Нет аккаунта?';
         switchLink.textContent = 'Зарегистрироваться';
-        logoTitle.textContent = 'С возвращением!';
-        logoSubtitle.textContent = 'Мы рады снова вас видеть!';
+        logoTitle.textContent = 'Alta';
+        logoSubtitle.textContent = 'Премиум общение в стиле рубина';
     } else {
         // Режим регистрации
         showElement(usernameGroup, true);
@@ -102,7 +102,7 @@ function updateUITexts() {
         switchText.textContent = 'Уже есть аккаунт?';
         switchLink.textContent = 'Войти';
         logoTitle.textContent = 'Создать аккаунт';
-        logoSubtitle.textContent = 'Добро пожаловать в Ruby Discord!';
+        logoSubtitle.textContent = 'Добро пожаловать в Alta!';
     }
 }
 
