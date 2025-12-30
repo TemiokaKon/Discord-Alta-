@@ -246,10 +246,15 @@ function initializeDatabase() {
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
           FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
         )
-      `);
-
-      console.log('✅ Database initialized with all tables and indexes');
-      resolve();
+      `, (err) => {
+        if (err) {
+          console.error('❌ Database initialization error:', err);
+          reject(err);
+        } else {
+          console.log('✅ Database initialized with all tables and indexes');
+          resolve();
+        }
+      });
     });
   });
 }
