@@ -4,6 +4,7 @@ const { createApp } = require('./app');
 const config = require('./config/environment');
 const { logger } = require('./config/logger');
 const { socketAuth } = require('./middleware/auth.middleware');
+const messageModel = require('./models/message.model');
 
 /**
  * Initialize Socket.IO with WebSocket service
@@ -61,37 +62,52 @@ function initializeSocketIO(server) {
     });
 
     // Handle new messages
-    socket.on('send-message', (data) => {
-      const { channelId, content, username, avatar } = data;
-      const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const message = {
-        id: messageId,
-        content,
-        username,
-        avatar,
-        userId,
-        channelId,
-        created_at: new Date().toISOString()
-      };
-      
-      io.to(`channel:${channelId}`).emit('new-message', { message, channelId });
-      logger.info('Message sent', { userId, channelId, messageId });
+    socket.on('send-message', async (data) => {
+      try {
+        const { channelId, content } = data;
+        
+        // Persist message to database
+        const messageId = await messageModel.create(content, userId, channelId);
+        const message = await messageModel.findById(messageId);
+        
+        // Emit to channel subscribers
+        io.to(`channel:${channelId}`).emit('new-message', { message, channelId });
+        logger.info('Message sent and persisted', { userId, channelId, messageId });
+      } catch (error) {
+        logger.error('Error sending message', { error: error.message, userId });
+        socket.emit('message-error', { error: 'Failed to send message' });
+      }
     });
 
     // Handle direct messages
-    socket.on('send-dm', (data) => {
-      const { receiverId, content } = data;
-      const receiverSocketId = onlineUsers.get(parseInt(receiverId));
-      
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit('new-dm', {
-          senderId: userId,
-          content,
-          timestamp: new Date().toISOString()
-        });
+    socket.on('send-dm', async (data) => {
+      try {
+        const { receiverId, content } = data;
+        const receiverSocketId = onlineUsers.get(parseInt(receiverId));
+        
+        // Persist DM to database
+        const messageId = await messageModel.createDM(content, userId, receiverId);
+        
+        // Emit to receiver if online
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit('new-dm', {
+            id: messageId,
+            senderId: userId,
+            senderUsername: socket.user.username,
+            senderAvatar: socket.user.avatar,
+            content,
+            created_at: new Date().toISOString()
+          });
+        }
+        
+        // Emit confirmation to sender
+        socket.emit('dm-sent', { messageId, receiverId });
+        
+        logger.info('DM sent and persisted', { senderId: userId, receiverId, messageId });
+      } catch (error) {
+        logger.error('Error sending DM', { error: error.message, userId });
+        socket.emit('dm-error', { error: 'Failed to send direct message' });
       }
-      
-      logger.info('DM sent', { senderId: userId, receiverId });
     });
 
     // Handle typing indicators
@@ -161,23 +177,54 @@ function initializeSocketIO(server) {
     });
 
     // Handle reactions
-    socket.on('add-reaction', (data) => {
-      const { messageId, emoji, channelId } = data;
-      io.to(`channel:${channelId}`).emit('reaction-added', {
-        messageId,
-        emoji,
-        userId,
-        username: socket.user.username
-      });
+    socket.on('add-reaction', async (data) => {
+      try {
+        const { messageId, emoji, channelId } = data;
+        
+        // Persist reaction to database
+        const added = await messageModel.addReaction(messageId, userId, emoji);
+        
+        if (added) {
+          const reactions = await messageModel.getReactions(messageId);
+          
+          // Emit to channel subscribers
+          io.to(`channel:${channelId}`).emit('reaction-added', {
+            messageId,
+            emoji,
+            userId,
+            username: socket.user.username,
+            reactions
+          });
+          logger.info('Reaction added', { userId, messageId, emoji });
+        } else {
+          socket.emit('reaction-error', { error: 'Already reacted with this emoji' });
+        }
+      } catch (error) {
+        logger.error('Error adding reaction', { error: error.message, userId });
+        socket.emit('reaction-error', { error: 'Failed to add reaction' });
+      }
     });
 
-    socket.on('remove-reaction', (data) => {
-      const { messageId, emoji, channelId } = data;
-      io.to(`channel:${channelId}`).emit('reaction-removed', {
-        messageId,
-        emoji,
-        userId
-      });
+    socket.on('remove-reaction', async (data) => {
+      try {
+        const { messageId, emoji, channelId } = data;
+        
+        // Remove reaction from database
+        await messageModel.removeReaction(messageId, userId, emoji);
+        const reactions = await messageModel.getReactions(messageId);
+        
+        // Emit to channel subscribers
+        io.to(`channel:${channelId}`).emit('reaction-removed', {
+          messageId,
+          emoji,
+          userId,
+          reactions
+        });
+        logger.info('Reaction removed', { userId, messageId, emoji });
+      } catch (error) {
+        logger.error('Error removing reaction', { error: error.message, userId });
+        socket.emit('reaction-error', { error: 'Failed to remove reaction' });
+      }
     });
 
     // Handle user status updates

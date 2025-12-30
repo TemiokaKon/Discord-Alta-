@@ -59,6 +59,11 @@ const schemas = {
     custom_status: Joi.string().max(128).allow('')
   }),
 
+  changePassword: Joi.object({
+    oldPassword: Joi.string().required(),
+    newPassword: Joi.string().min(6).required()
+  }),
+
   // Message schemas
   sendMessage: Joi.object({
     content: Joi.string().min(1).max(2000).required()

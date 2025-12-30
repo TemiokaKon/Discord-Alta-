@@ -88,7 +88,7 @@ async function createApp() {
       if (allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(null, true); // Allow all for now
+        cb(new Error(`File type ${file.mimetype} is not supported. Allowed types: ${allowedMimeTypes.join(', ')}`), false);
       }
     }
   });
