@@ -258,6 +258,52 @@ function connectToSocketIO() {
                 leaveVoiceChannel(true);
             }
         });
+
+        // New unified call signaling events
+        socket.on('user-joined-call', (data) => {
+            console.log('User joined call:', data);
+            if (window.enhancedCallManager) {
+                window.enhancedCallManager.addParticipant(data.userId, {
+                    name: data.username,
+                    avatar: data.avatar,
+                    audioEnabled: data.mediaState?.audio ?? true,
+                    videoEnabled: data.mediaState?.video ?? false,
+                    speaking: false
+                });
+            }
+        });
+
+        socket.on('user-left-call', (data) => {
+            console.log('User left call:', data);
+            if (window.enhancedCallManager) {
+                window.enhancedCallManager.removeParticipant(data.userId);
+            }
+        });
+
+        socket.on('user-media-state', (data) => {
+            console.log('User media state changed:', data);
+            if (window.enhancedCallManager) {
+                window.enhancedCallManager.updateParticipantStatus(data.userId, {
+                    audioEnabled: data.state?.audio,
+                    videoEnabled: data.state?.video,
+                    speaking: data.state?.speaking
+                });
+            }
+        });
+
+        socket.on('user-screen-share-started', (data) => {
+            console.log('User started screen sharing:', data);
+            if (window.toast) {
+                window.toast.info('Демонстрация экрана', `${data.username} начал(а) демонстрацию экрана`);
+            }
+        });
+
+        socket.on('user-screen-share-stopped', (data) => {
+            console.log('User stopped screen sharing:', data);
+            if (window.toast) {
+                window.toast.info('Демонстрация экрана', `${data.username} остановил(а) демонстрацию экрана`);
+            }
+        });
     }
 }
 
@@ -1303,17 +1349,33 @@ async function joinVoiceChannel(channelName) {
     const channelEl = document.querySelector(`[data-channel="${channelName}"]`);
     if (channelEl) channelEl.classList.add('in-call');
     
-    const callInterface = document.getElementById('callInterface');
-    callInterface.classList.remove('hidden');
-    
-    document.querySelector('.call-channel-name').textContent = channelName;
-    
     try {
-        await initializeMedia();
-        
-        // Connect to the socket for voice
-        if (socket && socket.connected) {
-            socket.emit('join-voice-channel', { channelName, userId: currentUser.id });
+        // Use enhanced call manager
+        if (window.enhancedCallManager) {
+            await window.enhancedCallManager.startCall({
+                channelId: channelName,
+                channelName: channelName,
+                type: 'voice'
+            });
+            
+            // Emit join-call event with new signaling
+            if (socket && socket.connected) {
+                socket.emit('join-call', { 
+                    channelId: channelName,
+                    mediaState: {
+                        audio: window.enhancedCallManager.isAudioEnabled,
+                        video: window.enhancedCallManager.isVideoEnabled,
+                        screen: window.enhancedCallManager.isScreenSharing
+                    }
+                });
+            }
+        } else {
+            // Fallback to legacy behavior
+            await initializeMedia();
+            
+            if (socket && socket.connected) {
+                socket.emit('join-voice-channel', { channelName, userId: currentUser.id });
+            }
         }
 
     } catch (error) {
@@ -1370,37 +1432,48 @@ function leaveVoiceChannel(force = false) {
     if (force) {
         inCall = false;
 
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-            localStream = null;
-        }
+        // Use enhanced call manager if available
+        if (window.enhancedCallManager && window.enhancedCallManager.currentCall) {
+            const channelId = window.enhancedCallManager.currentCall.channelId;
+            
+            // Emit leave-call event with new signaling
+            if (socket && socket.connected) {
+                socket.emit('leave-call', { channelId });
+            }
+            
+            window.enhancedCallManager.endCall();
+        } else {
+            // Fallback to legacy behavior
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
 
-        if (screenStream) {
-            screenStream.getTracks().forEach(track => track.stop());
-            screenStream = null;
-        }
-        
-        if (socket && socket.connected) {
-            socket.emit('leave-voice-channel', currentChannel);
-        }
+            if (screenStream) {
+                screenStream.getTracks().forEach(track => track.stop());
+                screenStream = null;
+            }
+            
+            if (socket && socket.connected) {
+                socket.emit('leave-voice-channel', currentChannel);
+            }
 
-        Object.values(peerConnections).forEach(pc => pc.close());
-        peerConnections = {};
+            Object.values(peerConnections).forEach(pc => pc.close());
+            peerConnections = {};
+
+            const localVideo = document.getElementById('localVideo');
+            localVideo.srcObject = null;
+        }
 
         document.querySelectorAll('.voice-channel').forEach(ch => ch.classList.remove('in-call'));
         document.getElementById('remoteParticipants').innerHTML = '';
-    }
-
-    const callInterface = document.getElementById('callInterface');
-    callInterface.classList.add('hidden');
-
-    if (force) {
-        const localVideo = document.getElementById('localVideo');
-        localVideo.srcObject = null;
         isVideoEnabled = true;
         isAudioEnabled = true;
         updateCallButtons();
     }
+
+    const callInterface = document.getElementById('callInterface');
+    callInterface.classList.add('hidden');
 }
 
 function initializeCallControls() {
@@ -1436,6 +1509,15 @@ function initializeCallControls() {
 }
 
 function toggleVideo() {
+    // Use enhanced call manager if available
+    if (window.enhancedCallManager && window.enhancedCallManager.localStream) {
+        window.enhancedCallManager.toggleVideo();
+        isVideoEnabled = window.enhancedCallManager.isVideoEnabled;
+        updateCallButtons();
+        return;
+    }
+    
+    // Fallback to legacy behavior
     if (!localStream) return;
     
     isVideoEnabled = !isVideoEnabled;
@@ -1457,6 +1539,24 @@ function toggleVideo() {
 }
 
 function toggleAudio() {
+    // Use enhanced call manager if available
+    if (window.enhancedCallManager && window.enhancedCallManager.localStream) {
+        window.enhancedCallManager.toggleAudio();
+        isAudioEnabled = window.enhancedCallManager.isAudioEnabled;
+        
+        if (!isAudioEnabled) {
+            isMuted = true;
+            document.getElementById('muteBtn')?.classList.add('active');
+        } else {
+            isMuted = false;
+            document.getElementById('muteBtn')?.classList.remove('active');
+        }
+        
+        updateCallButtons();
+        return;
+    }
+    
+    // Fallback to legacy behavior
     if (!localStream) return;
     
     isAudioEnabled = !isAudioEnabled;
@@ -1476,6 +1576,18 @@ function toggleAudio() {
 }
 
 async function toggleScreenShare() {
+    // Use enhanced call manager if available
+    if (window.enhancedCallManager && window.enhancedCallManager.localStream) {
+        if (window.enhancedCallManager.isScreenSharing) {
+            window.enhancedCallManager.stopScreenShare();
+        } else {
+            await window.enhancedCallManager.startScreenShare();
+        }
+        updateCallButtons();
+        return;
+    }
+    
+    // Fallback to legacy behavior
     if (screenStream) {
         // Stop screen sharing
         screenStream.getTracks().forEach(track => track.stop());
@@ -1550,6 +1662,16 @@ function updateCallButtons() {
     const toggleVideoBtn = document.getElementById('toggleVideoBtn');
     const toggleAudioBtn = document.getElementById('toggleAudioBtn');
     const toggleScreenBtn = document.getElementById('toggleScreenBtn');
+    
+    // Sync state from enhanced call manager if available
+    if (window.enhancedCallManager && window.enhancedCallManager.localStream) {
+        isVideoEnabled = window.enhancedCallManager.isVideoEnabled;
+        isAudioEnabled = window.enhancedCallManager.isAudioEnabled;
+        
+        if (toggleScreenBtn) {
+            toggleScreenBtn.classList.toggle('active', window.enhancedCallManager.isScreenSharing);
+        }
+    }
     
     if (toggleVideoBtn) {
         toggleVideoBtn.classList.toggle('active', !isVideoEnabled);

@@ -9,6 +9,7 @@ class SettingsModal {
                 outputDevice: 'default',
                 inputVolume: 100,
                 outputVolume: 100,
+                inputGain: 100,
                 noiseSuppression: true,
                 echoCancellation: true,
                 autoGainControl: true,
@@ -25,6 +26,10 @@ class SettingsModal {
             video: {
                 device: 'default',
                 quality: '720p'
+            },
+            screen: {
+                quality: '1080p',
+                includeAudio: false
             }
         };
 
@@ -36,6 +41,18 @@ class SettingsModal {
         this.micAudioContext = null;
         this.micMonitorGain = null;
         this.micAnalyser = null;
+    }
+
+    /**
+     * Helper to ensure screen settings are initialized
+     */
+    ensureScreenSettings() {
+        if (!this.currentSettings.screen) {
+            this.currentSettings.screen = {
+                quality: '1080p',
+                includeAudio: false
+            };
+        }
     }
 
     async show() {
@@ -233,6 +250,14 @@ class SettingsModal {
 
                 <div class="slider-container">
                     <div class="slider-label">
+                        <span>Усиление входа</span>
+                        <span class="slider-value" id="inputGainValue">100%</span>
+                    </div>
+                    <input type="range" min="0" max="200" value="100" class="slider" id="inputGainSlider">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
                         <span>Громкость входа</span>
                         <span class="slider-value" id="inputVolumeValue">100%</span>
                     </div>
@@ -247,15 +272,36 @@ class SettingsModal {
                     <input type="range" min="0" max="100" value="100" class="slider" id="outputVolumeSlider">
                 </div>
 
-                <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 18px;">Качество демонстрации экрана</h3>
+                <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 18px;">Настройки видео</h3>
                 <div class="modal-form-group">
-                    <label class="modal-form-label">Разрешение</label>
-                    <select class="modal-form-input" id="screenQualitySelect">
-                        <option value="720p">720p @ 60fps (HD)</option>
-                        <option value="1080p">1080p @ 60fps (Full HD)</option>
-                        <option value="1440p">1440p @ 60fps (2K)</option>
+                    <label class="modal-form-label">Качество видео</label>
+                    <select class="modal-form-input" id="videoQualitySelect">
+                        <option value="480p">480p (SD)</option>
+                        <option value="720p">720p (HD)</option>
+                        <option value="1080p">1080p (Full HD)</option>
                     </select>
                 </div>
+
+                <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 18px;">Демонстрация экрана</h3>
+                <div class="modal-form-group">
+                    <label class="modal-form-label">Качество демонстрации экрана</label>
+                    <select class="modal-form-input" id="screenQualitySelect">
+                        <option value="720p">720p (HD)</option>
+                        <option value="1080p">1080p (Full HD)</option>
+                        <option value="4k">4K (Ultra HD)</option>
+                    </select>
+                </div>
+
+                <div class="modal-form-group flex items-center justify-between">
+                    <label class="modal-form-label" style="margin-bottom: 0;">Захват системного звука</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="screenAudioToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <p style="margin-top: 4px; font-size: 12px; color: rgba(255, 228, 236, 0.6);">
+                    Включает звук системы при демонстрации экрана (если браузер поддерживает)
+                </p>
             </div>
         `;
     }
@@ -388,6 +434,35 @@ class SettingsModal {
         const autoGainControlToggle = document.getElementById('autoGainControlToggle');
         autoGainControlToggle?.addEventListener('change', (e) => {
             this.currentSettings.voice.autoGainControl = !!e.target.checked;
+            this.syncSettingsWithCallManager();
+        });
+
+        const inputGainSlider = document.getElementById('inputGainSlider');
+        inputGainSlider?.addEventListener('input', (e) => {
+            const v = parseInt(e.target.value, 10);
+            document.getElementById('inputGainValue').textContent = v + '%';
+            this.currentSettings.voice.inputGain = v;
+            this.syncSettingsWithCallManager();
+        });
+
+        const videoQualitySelect = document.getElementById('videoQualitySelect');
+        videoQualitySelect?.addEventListener('change', (e) => {
+            this.currentSettings.video.quality = e.target.value;
+            this.syncSettingsWithCallManager();
+        });
+
+        const screenQualitySelect = document.getElementById('screenQualitySelect');
+        screenQualitySelect?.addEventListener('change', (e) => {
+            this.ensureScreenSettings();
+            this.currentSettings.screen.quality = e.target.value;
+            this.syncSettingsWithCallManager();
+        });
+
+        const screenAudioToggle = document.getElementById('screenAudioToggle');
+        screenAudioToggle?.addEventListener('change', (e) => {
+            this.ensureScreenSettings();
+            this.currentSettings.screen.includeAudio = !!e.target.checked;
+            this.syncSettingsWithCallManager();
         });
 
         // Notifications
@@ -409,14 +484,84 @@ class SettingsModal {
 
     async loadCurrentSettings() {
         try {
-            const savedSettings = localStorage.getItem('alta52Settings');
-            if (savedSettings) {
-                const settings = JSON.parse(savedSettings);
-                Object.assign(this.currentSettings, settings);
+            // First load from localStorage
+            const userId = currentUser?.id;
+            if (userId) {
+                const localKey = `userSettings_${userId}`;
+                const savedSettings = localStorage.getItem(localKey);
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    Object.assign(this.currentSettings, settings);
+                }
             }
+
+            // Then sync with server
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const response = await fetch('/api/v1/users/me/settings', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.data.settings) {
+                            Object.assign(this.currentSettings, data.data.settings);
+                            // Save to localStorage
+                            if (userId) {
+                                const localKey = `userSettings_${userId}`;
+                                localStorage.setItem(localKey, JSON.stringify(this.currentSettings));
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to load settings from server:', error);
+                }
+            }
+
             this.applySettingsToUI();
+            this.syncSettingsWithCallManager();
         } catch (error) {
             console.error('Ошибка загрузки настроек:', error);
+        }
+    }
+
+    /**
+     * Sync settings with EnhancedCallManager
+     */
+    syncSettingsWithCallManager() {
+        if (window.enhancedCallManager) {
+            window.enhancedCallManager.saveSettings(this.currentSettings);
+        }
+    }
+
+    /**
+     * Save settings to server and localStorage
+     */
+    async saveSettingsToServer() {
+        try {
+            const userId = currentUser?.id;
+            if (userId) {
+                const localKey = `userSettings_${userId}`;
+                localStorage.setItem(localKey, JSON.stringify(this.currentSettings));
+            }
+
+            const token = localStorage.getItem('token');
+            if (token) {
+                await fetch('/api/v1/users/me/settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(this.currentSettings)
+                });
+            }
+        } catch (error) {
+            console.error('Failed to save settings to server:', error);
         }
     }
 
@@ -430,6 +575,12 @@ class SettingsModal {
 
         const autoGainControlToggle = document.getElementById('autoGainControlToggle');
         if (autoGainControlToggle) autoGainControlToggle.checked = !!this.currentSettings.voice.autoGainControl;
+
+        const inputGainSlider = document.getElementById('inputGainSlider');
+        if (inputGainSlider) {
+            inputGainSlider.value = this.currentSettings.voice.inputGain ?? 100;
+            document.getElementById('inputGainValue').textContent = inputGainSlider.value + '%';
+        }
 
         const inputVolumeSlider = document.getElementById('inputVolumeSlider');
         if (inputVolumeSlider) {
@@ -450,6 +601,23 @@ class SettingsModal {
         if (micMonitorSlider) {
             micMonitorSlider.value = this.currentSettings.voice.micMonitorVolume ?? 20;
             document.getElementById('micMonitorValue').textContent = micMonitorSlider.value + '%';
+        }
+
+        // video settings
+        const videoQualitySelect = document.getElementById('videoQualitySelect');
+        if (videoQualitySelect) {
+            videoQualitySelect.value = this.currentSettings.video?.quality || '720p';
+        }
+
+        // screen settings
+        const screenQualitySelect = document.getElementById('screenQualitySelect');
+        if (screenQualitySelect) {
+            screenQualitySelect.value = this.currentSettings.screen?.quality || '1080p';
+        }
+
+        const screenAudioToggle = document.getElementById('screenAudioToggle');
+        if (screenAudioToggle) {
+            screenAudioToggle.checked = !!this.currentSettings.screen?.includeAudio;
         }
 
         // notifications
@@ -871,6 +1039,7 @@ class SettingsModal {
         }
 
         this.saveSettings();
+        this.saveSettingsToServer();
     }
 
     saveSettings() {
@@ -894,9 +1063,31 @@ class SettingsModal {
             const callSoundToggle = document.getElementById('callSoundToggle');
             if (callSoundToggle) this.currentSettings.notifications.callSound = callSoundToggle.checked;
 
-            const screenQualitySelect = document.getElementById('screenQualitySelect');
-            if (screenQualitySelect) this.currentSettings.video.quality = screenQualitySelect.value;
+            const videoQualitySelect = document.getElementById('videoQualitySelect');
+            if (videoQualitySelect) {
+                this.currentSettings.video = this.currentSettings.video || {};
+                this.currentSettings.video.quality = videoQualitySelect.value;
+            }
 
+            const screenQualitySelect = document.getElementById('screenQualitySelect');
+            if (screenQualitySelect) {
+                this.ensureScreenSettings();
+                this.currentSettings.screen.quality = screenQualitySelect.value;
+            }
+
+            const screenAudioToggle = document.getElementById('screenAudioToggle');
+            if (screenAudioToggle) {
+                this.ensureScreenSettings();
+                this.currentSettings.screen.includeAudio = screenAudioToggle.checked;
+            }
+
+            // Save to user-specific localStorage key
+            const userId = currentUser?.id;
+            if (userId) {
+                const localKey = `userSettings_${userId}`;
+                localStorage.setItem(localKey, JSON.stringify(this.currentSettings));
+            }
+            // Also save to old key for backward compatibility
             localStorage.setItem('alta52Settings', JSON.stringify(this.currentSettings));
         } catch (error) {
             console.error('Ошибка сохранения настроек:', error);

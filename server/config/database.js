@@ -246,7 +246,21 @@ function initializeDatabase() {
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
           FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
         )
-      `, (err) => {
+      `);
+
+      // User settings table for voice/video preferences
+      database.run(`
+        CREATE TABLE IF NOT EXISTS user_settings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL UNIQUE,
+          settings TEXT NOT NULL DEFAULT '{}',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `);
+
+      database.run('CREATE INDEX IF NOT EXISTS idx_user_settings_user ON user_settings(user_id)', (err) => {
         if (err) {
           console.error('❌ Database initialization error:', err);
           reject(err);
